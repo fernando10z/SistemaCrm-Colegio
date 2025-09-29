@@ -1,408 +1,423 @@
 <?php
-
 session_start();
-// Incluir conexión a la base de datos
 include 'bd/conexion.php';
 
+// Obtener nombre del sistema
 $query_nombre = "SELECT valor FROM configuracion_sistema WHERE id = 1 LIMIT 1";
 $result_nombre = $conn->query($query_nombre);
 if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
-  $nombre_sistema = htmlspecialchars($row_nombre['valor']);
+    $nombre_sistema = htmlspecialchars($row_nombre['valor']);
 }
-    
+
+// Obtener filtros de fecha
+$fecha_filtro = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
+$mes_filtro = isset($_GET['mes']) ? $_GET['mes'] : date('Y-m');
+$anio_filtro = isset($_GET['anio']) ? $_GET['anio'] : date('Y');
+$tipo_filtro = isset($_GET['tipo_filtro']) ? $_GET['tipo_filtro'] : 'dia'; // dia, mes, anio
+
+$where_fecha = "";
+$where_fecha_leads = "";
+$where_fecha_interacciones = "";
+
+switch($tipo_filtro) {
+    case 'dia':
+        $where_fecha = "DATE(created_at) = '$fecha_filtro'";
+        $where_fecha_leads = "DATE(l.created_at) = '$fecha_filtro'";
+        $where_fecha_interacciones = "DATE(i.created_at) = '$fecha_filtro'";
+        break;
+    case 'mes':
+        $where_fecha = "DATE_FORMAT(created_at, '%Y-%m') = '$mes_filtro'";
+        $where_fecha_leads = "DATE_FORMAT(l.created_at, '%Y-%m') = '$mes_filtro'";
+        $where_fecha_interacciones = "DATE_FORMAT(i.created_at, '%Y-%m') = '$mes_filtro'";
+        break;
+    case 'anio':
+        $where_fecha = "YEAR(created_at) = '$anio_filtro'";
+        $where_fecha_leads = "YEAR(l.created_at) = '$anio_filtro'";
+        $where_fecha_interacciones = "YEAR(i.created_at) = '$anio_filtro'";
+        break;
+}
+
+// 1. Total de Leads Activos (sin cambios)
+$query_leads = "SELECT COUNT(*) as total FROM leads WHERE activo = 1 AND $where_fecha";
+$result_leads = $conn->query($query_leads);
+$total_leads = $result_leads->fetch_assoc()['total'];
+
+$fecha_anterior = date('Y-m-d', strtotime($fecha_filtro . ' -1 day'));
+$query_leads_anterior = "SELECT COUNT(*) as total FROM leads WHERE activo = 1 AND DATE(created_at) = '$fecha_anterior'";
+$result_leads_anterior = $conn->query($query_leads_anterior);
+$leads_anterior = $result_leads_anterior->fetch_assoc()['total'];
+$porcentaje_leads = $leads_anterior > 0 ? (($total_leads - $leads_anterior) / $leads_anterior) * 100 : 0;
+
+// 2. Total de Estudiantes Activos (sin cambios)
+$query_estudiantes = "SELECT COUNT(*) as total FROM estudiantes WHERE activo = 1 AND estado_matricula = 'matriculado' AND $where_fecha";
+$result_estudiantes = $conn->query($query_estudiantes);
+$total_estudiantes = $result_estudiantes->fetch_assoc()['total'];
+
+$query_estudiantes_anterior = "SELECT COUNT(*) as total FROM estudiantes WHERE activo = 1 AND estado_matricula = 'matriculado' AND DATE(created_at) = '$fecha_anterior'";
+$result_estudiantes_anterior = $conn->query($query_estudiantes_anterior);
+$estudiantes_anterior = $result_estudiantes_anterior->fetch_assoc()['total'];
+$porcentaje_estudiantes = $estudiantes_anterior > 0 ? (($total_estudiantes - $estudiantes_anterior) / $estudiantes_anterior) * 100 : 0;
+
+// 3. Total de Familias Activas (sin cambios)
+$query_familias = "SELECT COUNT(*) as total FROM familias WHERE activo = 1 AND $where_fecha";
+$result_familias = $conn->query($query_familias);
+$total_familias = $result_familias->fetch_assoc()['total'];
+
+$query_familias_anterior = "SELECT COUNT(*) as total FROM familias WHERE activo = 1 AND DATE(created_at) = '$fecha_anterior'";
+$result_familias_anterior = $conn->query($query_familias_anterior);
+$familias_anterior = $result_familias_anterior->fetch_assoc()['total'];
+$porcentaje_familias = $familias_anterior > 0 ? (($total_familias - $familias_anterior) / $familias_anterior) * 100 : 0;
+
+// 4. Total de Interacciones (sin cambios)
+$query_interacciones = "SELECT COUNT(*) as total FROM interacciones WHERE $where_fecha";
+$result_interacciones = $conn->query($query_interacciones);
+$total_interacciones = $result_interacciones->fetch_assoc()['total'];
+
+$query_interacciones_anterior = "SELECT COUNT(*) as total FROM interacciones WHERE DATE(created_at) = '$fecha_anterior'";
+$result_interacciones_anterior = $conn->query($query_interacciones_anterior);
+$interacciones_anterior = $result_interacciones_anterior->fetch_assoc()['total'];
+$porcentaje_interacciones = $interacciones_anterior > 0 ? (($total_interacciones - $interacciones_anterior) / $interacciones_anterior) * 100 : 0;
+
+// 5. Leads por Estado (CORREGIDO - línea 81)
+$query_leads_estado = "SELECT e.nombre, COUNT(l.id) as total 
+                       FROM estados_lead e 
+                       LEFT JOIN leads l ON e.id = l.estado_lead_id AND l.activo = 1 AND $where_fecha_leads
+                       WHERE e.activo = 1 
+                       GROUP BY e.id, e.nombre 
+                       ORDER BY e.orden_display";
+$result_leads_estado = $conn->query($query_leads_estado);
+$leads_por_estado = [];
+while($row = $result_leads_estado->fetch_assoc()) {
+    $leads_por_estado[] = $row;
+}
+
+// 6. Próximos Eventos (sin cambios)
+$query_eventos = "SELECT titulo, fecha_inicio, ubicacion, estado 
+                  FROM eventos 
+                  WHERE fecha_inicio >= NOW() 
+                  ORDER BY fecha_inicio ASC 
+                  LIMIT 5";
+$result_eventos = $conn->query($query_eventos);
+
+// 7. Estudiantes por Grado (sin cambios)
+$query_estudiantes_grado = "SELECT g.nombre as grado, COUNT(e.id) as total 
+                            FROM grados g 
+                            LEFT JOIN estudiantes e ON g.id = e.grado_id AND e.activo = 1 AND e.estado_matricula = 'matriculado'
+                            WHERE g.activo = 1 
+                            GROUP BY g.id, g.nombre 
+                            ORDER BY g.orden_display";
+$result_estudiantes_grado = $conn->query($query_estudiantes_grado);
+$estudiantes_por_grado = [];
+while($row = $result_estudiantes_grado->fetch_assoc()) {
+    $estudiantes_por_grado[] = $row;
+}
+
+// 8. Últimas Interacciones (CORREGIDO - línea 116)
+$query_ultimas_interacciones = "SELECT i.asunto, i.descripcion, t.nombre as tipo, 
+                                 i.fecha_realizada, i.estado, i.resultado
+                                 FROM interacciones i
+                                 JOIN tipos_interaccion t ON i.tipo_interaccion_id = t.id
+                                 WHERE $where_fecha_interacciones
+                                 ORDER BY i.created_at DESC 
+                                 LIMIT 10";
+$result_ultimas_interacciones = $conn->query($query_ultimas_interacciones);
 ?>
 <!DOCTYPE html>
-<html lang="en">
-<!-- [Head] start -->
-
+<html lang="es">
 <head>
   <title><?php echo $nombre_sistema; ?></title>
-  <!-- [Meta] -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="description" content="Mantis is made using Bootstrap 5 design framework. Download the free admin template & use it for your project.">
-  <meta name="keywords" content="Mantis, Dashboard UI Kit, Bootstrap 5, Admin Template, Admin Dashboard, CRM, CMS, Bootstrap Admin Template">
-  <meta name="author" content="CodedThemes">
-
-  <!-- [Favicon] icon -->
-  <link rel="icon" href="assets/images/favicon.svg" type="image/x-icon"> <!-- [Google Font] Family -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" id="main-font-link">
-<!-- [Tabler Icons] https://tablericons.com -->
-<link rel="stylesheet" href="assets/fonts/tabler-icons.min.css" >
-<!-- [Feather Icons] https://feathericons.com -->
-<link rel="stylesheet" href="assets/fonts/feather.css" >
-<!-- [Font Awesome Icons] https://fontawesome.com/icons -->
-<link rel="stylesheet" href="assets/fonts/fontawesome.css" >
-<!-- [Material Icons] https://fonts.google.com/icons -->
-<link rel="stylesheet" href="assets/fonts/material.css" >
-<!-- [Template CSS Files] -->
-<link rel="stylesheet" href="assets/css/style.css" id="main-style-link" >
-<link rel="stylesheet" href="assets/css/style-preset.css" >
-
+  <link rel="icon" href="assets/images/favicon.svg" type="image/x-icon">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/fonts/tabler-icons.min.css">
+  <link rel="stylesheet" href="assets/fonts/feather.css">
+  <link rel="stylesheet" href="assets/fonts/fontawesome.css">
+  <link rel="stylesheet" href="assets/fonts/material.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/style-preset.css">
+  <style>
+    .filter-container {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+  </style>
 </head>
-<!-- [Head] end -->
-<!-- [Body] Start -->
 
 <body data-pc-preset="preset-1" data-pc-direction="ltr" data-pc-theme="light">
-  <!-- [ Pre-loader ] start -->
-<div class="loader-bg">
-  <div class="loader-track">
-    <div class="loader-fill"></div>
+  <div class="loader-bg">
+    <div class="loader-track">
+      <div class="loader-fill"></div>
+    </div>
   </div>
-</div>
-<!-- [ Pre-loader ] End -->
- <!-- [ Sidebar Menu ] start -->
-<?php include 'includes/sidebar.php'; ?>
-<!-- [ Sidebar Menu ] end --> <!-- [ Header Topbar ] start -->
-<?php include 'includes/header.php'; ?>
-<!-- [ Header ] end -->
-  <!-- [ Main Content ] start -->
+
+  <?php include 'includes/sidebar.php'; ?>
+  <?php include 'includes/header.php'; ?>
+
   <div class="pc-container">
     <div class="pc-content">
-      <!-- [ breadcrumb ] start -->
       <div class="page-header">
         <div class="page-block">
           <div class="row align-items-center">
             <div class="col-md-12">
               <div class="page-header-title">
-                <h5 class="m-b-10">Home</h5>
+                <h5 class="m-b-10">Dashboard CRM</h5>
               </div>
               <ul class="breadcrumb">
-                <li class="breadcrumb-item"><a href="dashboard/index.html">Home</a></li>
-                <li class="breadcrumb-item"><a href="javascript: void(0)">Dashboard</a></li>
-                <li class="breadcrumb-item" aria-current="page">Home</li>
+                <li class="breadcrumb-item"><a href="index.php">Home</a></li>
+                <li class="breadcrumb-item" aria-current="page">Dashboard</li>
               </ul>
             </div>
           </div>
         </div>
       </div>
-      <!-- [ breadcrumb ] end -->
-      <!-- [ Main Content ] start -->
+
+      <!-- Filtros -->
+      <div class="filter-container">
+        <form method="GET" action="" class="row g-3 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label">Tipo de Filtro</label>
+            <select name="tipo_filtro" class="form-select" onchange="toggleFilters(this.value)">
+              <option value="dia" <?php echo $tipo_filtro == 'dia' ? 'selected' : ''; ?>>Por Día</option>
+              <option value="mes" <?php echo $tipo_filtro == 'mes' ? 'selected' : ''; ?>>Por Mes</option>
+              <option value="anio" <?php echo $tipo_filtro == 'anio' ? 'selected' : ''; ?>>Por Año</option>
+            </select>
+          </div>
+          
+          <div class="col-md-3" id="filtro_dia" style="display: <?php echo $tipo_filtro == 'dia' ? 'block' : 'none'; ?>;">
+            <label class="form-label">Fecha</label>
+            <input type="date" name="fecha" class="form-control" value="<?php echo $fecha_filtro; ?>">
+          </div>
+          
+          <div class="col-md-3" id="filtro_mes" style="display: <?php echo $tipo_filtro == 'mes' ? 'block' : 'none'; ?>;">
+            <label class="form-label">Mes</label>
+            <input type="month" name="mes" class="form-control" value="<?php echo $mes_filtro; ?>">
+          </div>
+          
+          <div class="col-md-3" id="filtro_anio" style="display: <?php echo $tipo_filtro == 'anio' ? 'block' : 'none'; ?>;">
+            <label class="form-label">Año</label>
+            <input type="number" name="anio" class="form-control" value="<?php echo $anio_filtro; ?>" min="2020" max="2099">
+          </div>
+          
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Métricas -->
       <div class="row">
-        <!-- [ sample-page ] start -->
         <div class="col-md-6 col-xl-3">
           <div class="card">
             <div class="card-body">
-              <h6 class="mb-2 f-w-400 text-muted">Total Page Views</h6>
-              <h4 class="mb-3">4,42,236 <span class="badge bg-light-primary border border-primary"><i
-                    class="ti ti-trending-up"></i> 59.3%</span></h4>
-              <p class="mb-0 text-muted text-sm">You made an extra <span class="text-primary">35,000</span> this year
-              </p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-xl-3">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="mb-2 f-w-400 text-muted">Total Users</h6>
-              <h4 class="mb-3">78,250 <span class="badge bg-light-success border border-success"><i
-                    class="ti ti-trending-up"></i> 70.5%</span></h4>
-              <p class="mb-0 text-muted text-sm">You made an extra <span class="text-success">8,900</span> this year</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-xl-3">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="mb-2 f-w-400 text-muted">Total Order</h6>
-              <h4 class="mb-3">18,800 <span class="badge bg-light-warning border border-warning"><i
-                    class="ti ti-trending-down"></i> 27.4%</span></h4>
-              <p class="mb-0 text-muted text-sm">You made an extra <span class="text-warning">1,943</span> this year</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-xl-3">
-          <div class="card">
-            <div class="card-body">
-              <h6 class="mb-2 f-w-400 text-muted">Total Sales</h6>
-              <h4 class="mb-3">$35,078 <span class="badge bg-light-danger border border-danger"><i
-                    class="ti ti-trending-down"></i> 27.4%</span></h4>
-              <p class="mb-0 text-muted text-sm">You made an extra <span class="text-danger">$20,395</span> this year
-              </p>
+              <h6 class="mb-2 f-w-400 text-muted">Total Leads</h6>
+              <h4 class="mb-3"><?php echo number_format($total_leads); ?> 
+                <span class="badge bg-light-<?php echo $porcentaje_leads >= 0 ? 'primary' : 'danger'; ?> border border-<?php echo $porcentaje_leads >= 0 ? 'primary' : 'danger'; ?>">
+                  <i class="ti ti-trending-<?php echo $porcentaje_leads >= 0 ? 'up' : 'down'; ?>"></i> 
+                  <?php echo abs(round($porcentaje_leads, 1)); ?>%
+                </span>
+              </h4>
+              <p class="mb-0 text-muted text-sm">Leads en el período seleccionado</p>
             </div>
           </div>
         </div>
 
-        <div class="col-md-12 col-xl-8">
-          <div class="d-flex align-items-center justify-content-between mb-3">
-            <h5 class="mb-0">Unique Visitor</h5>
-            <ul class="nav nav-pills justify-content-end mb-0" id="chart-tab-tab" role="tablist">
-              <li class="nav-item" role="presentation">
-                <button class="nav-link" id="chart-tab-home-tab" data-bs-toggle="pill" data-bs-target="#chart-tab-home"
-                  type="button" role="tab" aria-controls="chart-tab-home" aria-selected="true">Month</button>
-              </li>
-              <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="chart-tab-profile-tab" data-bs-toggle="pill"
-                  data-bs-target="#chart-tab-profile" type="button" role="tab" aria-controls="chart-tab-profile"
-                  aria-selected="false">Week</button>
-              </li>
-            </ul>
-          </div>
+        <div class="col-md-6 col-xl-3">
           <div class="card">
             <div class="card-body">
-              <div class="tab-content" id="chart-tab-tabContent">
-                <div class="tab-pane" id="chart-tab-home" role="tabpanel" aria-labelledby="chart-tab-home-tab"
-                  tabindex="0">
-                  <div id="visitor-chart-1"></div>
-                </div>
-                <div class="tab-pane show active" id="chart-tab-profile" role="tabpanel"
-                  aria-labelledby="chart-tab-profile-tab" tabindex="0">
-                  <div id="visitor-chart"></div>
-                </div>
-              </div>
+              <h6 class="mb-2 f-w-400 text-muted">Estudiantes Activos</h6>
+              <h4 class="mb-3"><?php echo number_format($total_estudiantes); ?> 
+                <span class="badge bg-light-<?php echo $porcentaje_estudiantes >= 0 ? 'success' : 'danger'; ?> border border-<?php echo $porcentaje_estudiantes >= 0 ? 'success' : 'danger'; ?>">
+                  <i class="ti ti-trending-<?php echo $porcentaje_estudiantes >= 0 ? 'up' : 'down'; ?>"></i> 
+                  <?php echo abs(round($porcentaje_estudiantes, 1)); ?>%
+                </span>
+              </h4>
+              <p class="mb-0 text-muted text-sm">Estudiantes matriculados</p>
             </div>
           </div>
         </div>
+
+        <div class="col-md-6 col-xl-3">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="mb-2 f-w-400 text-muted">Familias Activas</h6>
+              <h4 class="mb-3"><?php echo number_format($total_familias); ?> 
+                <span class="badge bg-light-<?php echo $porcentaje_familias >= 0 ? 'warning' : 'danger'; ?> border border-<?php echo $porcentaje_familias >= 0 ? 'warning' : 'danger'; ?>">
+                  <i class="ti ti-trending-<?php echo $porcentaje_familias >= 0 ? 'up' : 'down'; ?>"></i> 
+                  <?php echo abs(round($porcentaje_familias, 1)); ?>%
+                </span>
+              </h4>
+              <p class="mb-0 text-muted text-sm">Familias registradas</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="mb-2 f-w-400 text-muted">Interacciones</h6>
+              <h4 class="mb-3"><?php echo number_format($total_interacciones); ?> 
+                <span class="badge bg-light-info border border-info">
+                  <i class="ti ti-trending-<?php echo $porcentaje_interacciones >= 0 ? 'up' : 'down'; ?>"></i> 
+                  <?php echo abs(round($porcentaje_interacciones, 1)); ?>%
+                </span>
+              </h4>
+              <p class="mb-0 text-muted text-sm">Contactos realizados</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gráfico Leads por Estado -->
+        <div class="col-md-12 col-xl-8">
+          <h5 class="mb-3">Distribución de Leads por Estado</h5>
+          <div class="card">
+            <div class="card-body">
+              <canvas id="leadsChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estudiantes por Grado -->
         <div class="col-md-12 col-xl-4">
-          <h5 class="mb-3">Income Overview</h5>
+          <h5 class="mb-3">Estudiantes por Grado</h5>
           <div class="card">
             <div class="card-body">
-              <h6 class="mb-2 f-w-400 text-muted">This Week Statistics</h6>
-              <h3 class="mb-3">$7,650</h3>
-              <div id="income-overview-chart"></div>
+              <canvas id="estudiantesChart"></canvas>
             </div>
           </div>
         </div>
 
+        <!-- Últimas Interacciones -->
         <div class="col-md-12 col-xl-8">
-          <h5 class="mb-3">Recent Orders</h5>
+          <h5 class="mb-3">Últimas Interacciones</h5>
           <div class="card tbl-card">
             <div class="card-body">
               <div class="table-responsive">
                 <table class="table table-hover table-borderless mb-0">
                   <thead>
                     <tr>
-                      <th>TRACKING NO.</th>
-                      <th>PRODUCT NAME</th>
-                      <th>TOTAL ORDER</th>
-                      <th>STATUS</th>
-                      <th class="text-end">TOTAL AMOUNT</th>
+                      <th>ASUNTO</th>
+                      <th>TIPO</th>
+                      <th>FECHA</th>
+                      <th>ESTADO</th>
+                      <th>RESULTADO</th>
                     </tr>
                   </thead>
                   <tbody>
+                    <?php while($interaccion = $result_ultimas_interacciones->fetch_assoc()): ?>
                     <tr>
-                      <td><a href="#" class="text-muted">84564564</a></td>
-                      <td>Camera Lens</td>
-                      <td>40</td>
-                      <td><span class="d-flex align-items-center gap-2"><i
-                            class="fas fa-circle text-danger f-10 m-r-5"></i>Rejected</span>
+                      <td><?php echo htmlspecialchars($interaccion['asunto']); ?></td>
+                      <td><?php echo htmlspecialchars($interaccion['tipo']); ?></td>
+                      <td><?php echo $interaccion['fecha_realizada'] ? date('d/m/Y H:i', strtotime($interaccion['fecha_realizada'])) : 'Pendiente'; ?></td>
+                      <td>
+                        <span class="badge bg-<?php 
+                          echo $interaccion['estado'] == 'realizado' ? 'success' : 
+                               ($interaccion['estado'] == 'programado' ? 'warning' : 'secondary'); 
+                        ?>">
+                          <?php echo ucfirst($interaccion['estado']); ?>
+                        </span>
                       </td>
-                      <td class="text-end">$40,570</td>
-                    </tr>
-                    <tr>
-                      <td><a href="#" class="text-muted">84564564</a></td>
-                      <td>Laptop</td>
-                      <td>300</td>
-                      <td><span class="d-flex align-items-center gap-2"><i
-                            class="fas fa-circle text-warning f-10 m-r-5"></i>Pending</span>
+                      <td>
+                        <?php if($interaccion['resultado']): ?>
+                          <span class="badge bg-<?php 
+                            echo $interaccion['resultado'] == 'exitoso' ? 'success' : 
+                                 ($interaccion['resultado'] == 'convertido' ? 'primary' : 'danger'); 
+                          ?>">
+                            <?php echo ucfirst($interaccion['resultado']); ?>
+                          </span>
+                        <?php else: ?>
+                          <span class="text-muted">-</span>
+                        <?php endif; ?>
                       </td>
-                      <td class="text-end">$180,139</td>
                     </tr>
-                    <tr>
-                      <td><a href="#" class="text-muted">84564564</a></td>
-                      <td>Mobile</td>
-                      <td>355</td>
-                      <td><span class="d-flex align-items-center gap-2"><i
-                            class="fas fa-circle text-success f-10 m-r-5"></i>Approved</span></td>
-                      <td class="text-end">$180,139</td>
-                    </tr>
-                    <tr>
-                      <td><a href="#" class="text-muted">84564564</a></td>
-                      <td>Camera Lens</td>
-                      <td>40</td>
-                      <td><span class="d-flex align-items-center gap-2"><i
-                            class="fas fa-circle text-danger f-10 m-r-5"></i>Rejected</span>
-                      </td>
-                      <td class="text-end">$40,570</td>
-                    </tr>
-                    <tr>
-                      <td><a href="#" class="text-muted">84564564</a></td>
-                      <td>Laptop</td>
-                      <td>300</td>
-                      <td><span class="d-flex align-items-center gap-2"><i
-                            class="fas fa-circle text-warning f-10 m-r-5"></i>Pending</span>
-                      </td>
-                      <td class="text-end">$180,139</td>
-                    </tr>
-                    <tr>
-                      <td><a href="#" class="text-muted">84564564</a></td>
-                      <td>Mobile</td>
-                      <td>355</td>
-                      <td><span class="d-flex align-items-center gap-2"><i
-                            class="fas fa-circle text-success f-10 m-r-5"></i>Approved</span></td>
-                      <td class="text-end">$180,139</td>
-                    </tr>
-                    <tr>
-                      <td><a href="#" class="text-muted">84564564</a></td>
-                      <td>Camera Lens</td>
-                      <td>40</td>
-                      <td><span class="d-flex align-items-center gap-2"><i
-                            class="fas fa-circle text-danger f-10 m-r-5"></i>Rejected</span>
-                      </td>
-                      <td class="text-end">$40,570</td>
-                    </tr>
-                    <tr>
-                      <td><a href="#" class="text-muted">84564564</a></td>
-                      <td>Laptop</td>
-                      <td>300</td>
-                      <td><span class="d-flex align-items-center gap-2"><i
-                            class="fas fa-circle text-warning f-10 m-r-5"></i>Pending</span>
-                      </td>
-                      <td class="text-end">$180,139</td>
-                    </tr>
-                    <tr>
-                      <td><a href="#" class="text-muted">84564564</a></td>
-                      <td>Mobile</td>
-                      <td>355</td>
-                      <td><span class="d-flex align-items-center gap-2"><i
-                            class="fas fa-circle text-success f-10 m-r-5"></i>Approved</span></td>
-                      <td class="text-end">$180,139</td>
-                    </tr>
-                    <tr>
-                      <td><a href="#" class="text-muted">84564564</a></td>
-                      <td>Mobile</td>
-                      <td>355</td>
-                      <td><span class="d-flex align-items-center gap-2"><i
-                            class="fas fa-circle text-success f-10 m-r-5"></i>Approved</span></td>
-                      <td class="text-end">$180,139</td>
-                    </tr>
+                    <?php endwhile; ?>
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
         </div>
-        <div class="col-md-12 col-xl-4">
-          <h5 class="mb-3">Analytics Report</h5>
-          <div class="card">
-            <div class="list-group list-group-flush">
-              <a href="#"
-                class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">Company
-                Finance Growth<span class="h5 mb-0">+45.14%</span></a>
-              <a href="#"
-                class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">Company
-                Expenses Ratio<span class="h5 mb-0">0.58%</span></a>
-              <a href="#"
-                class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">Business
-                Risk Cases<span class="h5 mb-0">Low</span></a>
-            </div>
-            <div class="card-body px-2">
-              <div id="analytics-report-chart"></div>
-            </div>
-          </div>
-        </div>
 
-        <div class="col-md-12 col-xl-8">
-          <h5 class="mb-3">Sales Report</h5>
-          <div class="card">
-            <div class="card-body">
-              <h6 class="mb-2 f-w-400 text-muted">This Week Statistics</h6>
-              <h3 class="mb-0">$7,650</h3>
-              <div id="sales-report-chart"></div>
-            </div>
-          </div>
-        </div>
+        <!-- Próximos Eventos -->
         <div class="col-md-12 col-xl-4">
-          <h5 class="mb-3">Transaction History</h5>
+          <h5 class="mb-3">Próximos Eventos</h5>
           <div class="card">
             <div class="list-group list-group-flush">
-              <a href="#" class="list-group-item list-group-item-action">
-                <div class="d-flex">
-                  <div class="flex-shrink-0">
-                    <div class="avtar avtar-s rounded-circle text-success bg-light-success">
-                      <i class="ti ti-gift f-18"></i>
-                    </div>
+              <?php while($evento = $result_eventos->fetch_assoc()): ?>
+                <a href="#" class="list-group-item list-group-item-action">
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1"><?php echo htmlspecialchars($evento['titulo']); ?></h6>
+                    <small><?php echo date('d/m/Y', strtotime($evento['fecha_inicio'])); ?></small>
                   </div>
-                  <div class="flex-grow-1 ms-3">
-                    <h6 class="mb-1">Order #002434</h6>
-                    <p class="mb-0 text-muted">Today, 2:00 AM</P>
-                  </div>
-                  <div class="flex-shrink-0 text-end">
-                    <h6 class="mb-1">+ $1,430</h6>
-                    <p class="mb-0 text-muted">78%</P>
-                  </div>
-                </div>
-              </a>
-              <a href="#" class="list-group-item list-group-item-action">
-                <div class="d-flex">
-                  <div class="flex-shrink-0">
-                    <div class="avtar avtar-s rounded-circle text-primary bg-light-primary">
-                      <i class="ti ti-message-circle f-18"></i>
-                    </div>
-                  </div>
-                  <div class="flex-grow-1 ms-3">
-                    <h6 class="mb-1">Order #984947</h6>
-                    <p class="mb-0 text-muted">5 August, 1:45 PM</P>
-                  </div>
-                  <div class="flex-shrink-0 text-end">
-                    <h6 class="mb-1">- $302</h6>
-                    <p class="mb-0 text-muted">8%</P>
-                  </div>
-                </div>
-              </a>
-              <a href="#" class="list-group-item list-group-item-action">
-                <div class="d-flex">
-                  <div class="flex-shrink-0">
-                    <div class="avtar avtar-s rounded-circle text-danger bg-light-danger">
-                      <i class="ti ti-settings f-18"></i>
-                    </div>
-                  </div>
-                  <div class="flex-grow-1 ms-3">
-                    <h6 class="mb-1">Order #988784</h6>
-                    <p class="mb-0 text-muted">7 hours ago</P>
-                  </div>
-                  <div class="flex-shrink-0 text-end">
-                    <h6 class="mb-1">- $682</h6>
-                    <p class="mb-0 text-muted">16%</P>
-                  </div>
-                </div>
-              </a>
+                  <p class="mb-1 text-muted small"><?php echo htmlspecialchars($evento['ubicacion']); ?></p>
+                  <span class="badge bg-<?php 
+                    echo $evento['estado'] == 'programado' ? 'primary' : 
+                         ($evento['estado'] == 'en_curso' ? 'success' : 'secondary'); 
+                  ?>"><?php echo ucfirst($evento['estado']); ?></span>
+                </a>
+              <?php endwhile; ?>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <!-- [ Main Content ] end -->
+
   <?php include 'includes/footer.php'; ?>
 
-  <!-- [Page Specific JS] start -->
-  <script src="assets/js/plugins/apexcharts.min.js"></script>
-  <script src="assets/js/pages/dashboard-default.js"></script>
-  <!-- [Page Specific JS] end -->
-  <!-- Required Js -->
   <script src="assets/js/plugins/popper.min.js"></script>
   <script src="assets/js/plugins/simplebar.min.js"></script>
   <script src="assets/js/plugins/bootstrap.min.js"></script>
   <script src="assets/js/fonts/custom-font.js"></script>
   <script src="assets/js/pcoded.js"></script>
   <script src="assets/js/plugins/feather.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script>
+    function toggleFilters(tipo) {
+      document.getElementById('filtro_dia').style.display = tipo === 'dia' ? 'block' : 'none';
+      document.getElementById('filtro_mes').style.display = tipo === 'mes' ? 'block' : 'none';
+      document.getElementById('filtro_anio').style.display = tipo === 'anio' ? 'block' : 'none';
+    }
 
-  
-  
-  
-  
-  <script>layout_change('light');</script>
-  
-  
-  
-  
-  <script>change_box_container('false');</script>
-  
-  
-  
-  <script>layout_rtl_change('false');</script>
-  
-  
-  <script>preset_change("preset-1");</script>
-  
-  
-  <script>font_change("Public-Sans");</script>
-  
-    
+    // Gráfico Leads por Estado
+    const ctxLeads = document.getElementById('leadsChart').getContext('2d');
+    new Chart(ctxLeads, {
+      type: 'bar',
+      data: {
+        labels: <?php echo json_encode(array_column($leads_por_estado, 'nombre')); ?>,
+        datasets: [{
+          label: 'Leads',
+          data: <?php echo json_encode(array_column($leads_por_estado, 'total')); ?>,
+          backgroundColor: ['#e3f2fd', '#bbdefb', '#90caf9', '#64b5f6', '#42a5f5', '#2196f3', '#1e88e5']
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
 
+    // Gráfico Estudiantes por Grado
+    const ctxEstudiantes = document.getElementById('estudiantesChart').getContext('2d');
+    new Chart(ctxEstudiantes, {
+      type: 'doughnut',
+      data: {
+        labels: <?php echo json_encode(array_column($estudiantes_por_grado, 'grado')); ?>,
+        datasets: [{
+          data: <?php echo json_encode(array_column($estudiantes_por_grado, 'total')); ?>,
+          backgroundColor: ['#ffebee', '#fce4ec', '#f3e5f5', '#ede7f6', '#e8eaf6', '#e3f2fd', '#e1f5fe', '#e0f7fa', '#e0f2f1']
+        }]
+      },
+      options: {
+        responsive: true
+      }
+    });
+  </script>
 </body>
-<!-- [Body] end -->
-
 </html>

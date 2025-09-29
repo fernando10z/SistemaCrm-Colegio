@@ -104,7 +104,7 @@
                 <ul class="pc-submenu">
                 <li class="pc-item"><a class="pc-link" href="registro_egresados.php">Registro de Egresados</a></li>
                 <li class="pc-item"><a class="pc-link" href="campanas_exalumnos.php">Campañas para Exalumnos</a></li>
-                <li class="pc-item"><a class="pc-link" href="reenganche_desertores.php">Reenganche de Desertores</a></li>
+                <!-- <li class="pc-item"><a class="pc-link" href="reenganche_desertores.php">Reenganche de Desertores</a></li> -->
                 <li class="pc-item"><a class="pc-link" href="referidos_exalumnos.php">Referidos de Exalumnos</a></li>
                 </ul>
             </li>
@@ -120,8 +120,8 @@
                 <ul class="pc-submenu">
                 <li class="pc-item"><a class="pc-link" href="codigos_referidos.php">Códigos de Recomendación</a></li>
                 <li class="pc-item"><a class="pc-link" href="leads_referidos.php">Leads Referidos</a></li>
-                <li class="pc-item"><a class="pc-link" href="incentivos.php">Incentivos por Referidos</a></li>
-                <li class="pc-item"><a class="pc-link" href="ranking_referidos.php">Rankings de Recomendación</a></li>
+                <li class="pc-item"><a class="pc-link" href="incentivos_referidos.php">Incentivos por Referidos</a></li>
+                <li class="pc-item"><a class="pc-link" href="rankings_recomendacion.php">Rankings de Recomendación</a></li>
                 </ul>
             </li>
 
@@ -134,8 +134,8 @@
                 <a href="#!" class="pc-link"><span class="pc-micon"><i class="ti ti-chart-bar"></i>
                     </span><span class="pc-mtext">Análisis</span><span class="pc-arrow"><i data-feather="chevron-right"></i></span></a>
                 <ul class="pc-submenu">
-                <li class="pc-item"><a class="pc-link" href="dashboards.php">Dashboards por Área</a></li>
-                <li class="pc-item"><a class="pc-link" href="exportar_reportes.php">Exportación de Reportes</a></li>
+                <li class="pc-item"><a class="pc-link" href="dashboard_area.php">Dashboards por Área</a></li>
+                <!-- <li class="pc-item"><a class="pc-link" href="exportar_reportes.php">Exportación de Reportes</a></li> -->
                 <li class="pc-item"><a class="pc-link" href="analisis_comparativo.php">Análisis Comparativo</a></li>
                 </ul>
             </li>
