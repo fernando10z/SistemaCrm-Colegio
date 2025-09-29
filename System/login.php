@@ -1,13 +1,11 @@
 <?php
 session_start();
-
-
-      include 'bd/conexion.php';
+include 'bd/conexion.php';
     $query_nombre = "SELECT valor FROM configuracion_sistema WHERE id = 1 LIMIT 1";
     $result_nombre = $conn->query($query_nombre);
     if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
       $nombre_sistema = htmlspecialchars($row_nombre['valor']);
-    }
+}
 
 // Procesar el formulario de login cuando se envíe
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
@@ -55,597 +53,696 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
 ?>
 <!DOCTYPE html>
 <html lang="es">
-<!-- [Head] start -->
-
 <head>
-  <title><?php echo $nombre_sistema; ?></title>
-  <!-- [Meta] -->
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="description" content="Sistema de gestión académica - Colegio San José">
-  <meta name="keywords" content="Colegio San José, Sistema Académico, Login, Educación">
-  <meta name="author" content="Colegio San José">
-
-  <!-- [Favicon] icon -->
-  <link rel="icon" href="assets/images/favicon.svg" type="image/x-icon">
-  <!-- [Google Font] Family -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" id="main-font-link">
-  <!-- [Tabler Icons] https://tablericons.com -->
-  <link rel="stylesheet" href="assets/fonts/tabler-icons.min.css">
-  <!-- [Feather Icons] https://feathericons.com -->
-  <link rel="stylesheet" href="assets/fonts/feather.css">
-  <!-- [Font Awesome Icons] https://fontawesome.com/icons -->
-  <link rel="stylesheet" href="assets/fonts/fontawesome.css">
-  <!-- [Material Icons] https://fonts.google.com/icons -->
-  <link rel="stylesheet" href="assets/fonts/material.css">
-  <!-- [Template CSS Files] -->
-  <link rel="stylesheet" href="assets/css/style.css" id="main-style-link">
-  <link rel="stylesheet" href="assets/css/style-preset.css">
-
-  <!-- SweetAlert2 para mensajes bonitos -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-  
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  
+    <title><?php echo $nombre_sistema; ?> - Acceso</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="Sistema de gestión académica - Colegio San José">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    
   <style>
-      * {
-          font-family: 'Poppins', sans-serif;
+      :root {
+          --primary-color: #2563eb;
+          --primary-dark: #1d4ed8;
+          --primary-light: #3b82f6;
+          --accent-color: #f59e0b;
+          --accent-light: #fbbf24;
+          --text-primary: #111827;
+          --text-secondary: #374151; /* más visible en fondo claro */
+          --text-light: #6b7280; 
+          --bg-primary: #ffffff;
+          --bg-secondary: #f9fafb;
+          --bg-glass: rgba(255, 255, 255, 0.7); /* más sólido para mejor contraste */
+          --border-color: #e5e7eb;
+          --shadow-light: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+          --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          --shadow-large: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+          --radius-sm: 8px;
+          --radius-md: 12px;
+          --radius-lg: 16px;
+          --radius-xl: 24px;
       }
-      
-      body {
+
+      * {
           margin: 0;
           padding: 0;
-          overflow-x: hidden;
+          box-sizing: border-box;
       }
-      
-      .auth-main {
+
+      body {
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+          line-height: 1.5;
+          color: var(--text-primary);
+          background: linear-gradient(135deg, #ffffffff 0%, #ffffffff 100%);
           min-height: 100vh;
-          background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 25%, #3b82f6 50%, #f59e0b 75%, #d97706 100%);
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 20px;
+          padding: 2rem 1rem;
           position: relative;
+          overflow-x: hidden;
       }
-      
-      .auth-main::before {
+
+      /* Ajuste: el fondo animado ahora con tonos suaves para que no se pierda en blanco */
+      body::before {
           content: '';
           position: absolute;
           top: 0;
           left: 0;
           right: 0;
           bottom: 0;
-          background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-          opacity: 0.3;
+          background: 
+              radial-gradient(circle at 20% 80%, rgba(37, 99, 235, 0.12) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(245, 158, 11, 0.15) 0%, transparent 50%),
+              radial-gradient(circle at 40% 40%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+          animation: backgroundShift 20s ease-in-out infinite;
       }
-      
-      .auth-wrapper {
+
+      @keyframes backgroundShift {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.85; }
+      }
+
+      .login-container {
           width: 100%;
-          max-width: 450px;
+          max-width: 420px;
           position: relative;
-          z-index: 2;
+          z-index: 10;
       }
-      
-      .auth-header {
-          text-align: center;
-          margin-bottom: 3rem;
-          position: relative;
-      }
-      
-      .logo-container {
-          background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-          border-radius: 25px;
-          padding: 30px;
-          box-shadow: 
-              0 20px 40px rgba(0,0,0,0.15),
-              0 10px 20px rgba(0,0,0,0.1),
-              inset 0 1px 0 rgba(255,255,255,0.8);
-          display: inline-block;
-          margin-bottom: 1.5rem;
-          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          position: relative;
-          border: 3px solid rgba(251, 191, 36, 0.3);
-      }
-      
-      .logo-container::before {
-          content: '';
-          position: absolute;
-          top: -3px;
-          left: -3px;
-          right: -3px;
-          bottom: -3px;
-          background: linear-gradient(45deg, #fbbf24, #f59e0b, #d97706, #92400e);
-          border-radius: 28px;
-          z-index: -1;
-          opacity: 0;
-          transition: opacity 0.3s ease;
-      }
-      
-      .logo-container:hover::before {
-          opacity: 1;
-      }
-      
-      .logo-container:hover {
-          transform: translateY(-8px) scale(1.05);
-          box-shadow: 
-              0 30px 60px rgba(0,0,0,0.2),
-              0 15px 30px rgba(0,0,0,0.15);
-      }
-      
-      .logo {
-          width: 120px;
-          height: 120px;
-          background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #1e3a8a 100%);
-          border-radius: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #fbbf24;
-          font-size: 32px;
-          font-weight: 800;
-          text-decoration: none;
+
+      .login-card {
+          background: var(--bg-glass);
+          backdrop-filter: blur(18px);
+          border: 1px solid rgba(0, 0, 0, 0.08);
+          border-radius: var(--radius-xl);
+          padding: 3rem 2rem 2rem;
+          box-shadow: var(--shadow-large);
           position: relative;
           overflow: hidden;
-          border: 2px solid #fbbf24;
-          box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
+          animation: slideUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       }
-      
-      .logo::before {
-          content: '⚜️';
-          position: absolute;
-          font-size: 28px;
-          animation: pulse 2s infinite;
-      }
-      
-      @keyframes pulse {
-          0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.1); opacity: 0.8; }
-      }
-      
-      .school-info {
-          color: white;
-          text-align: center;
-          text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
-      }
-      
-      .school-name {
-          font-size: 28px;
-          font-weight: 800;
-          margin-bottom: 5px;
-          background: linear-gradient(45deg, #fbbf24, #f59e0b);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          text-shadow: none;
-      }
-      
-      .school-subtitle {
-          font-size: 16px;
-          font-weight: 500;
-          opacity: 0.9;
-          margin-bottom: 0;
-      }
-      
-      .card {
-          border: none;
-          border-radius: 25px;
-          box-shadow: 
-              0 25px 50px rgba(0,0,0,0.15),
-              0 12px 24px rgba(0,0,0,0.1);
-          backdrop-filter: blur(20px);
-          background: rgba(255,255,255,0.95);
-          border: 1px solid rgba(255,255,255,0.2);
-          overflow: hidden;
-          position: relative;
-      }
-      
-      .card::before {
+
+      .login-card::before {
           content: '';
           position: absolute;
           top: 0;
           left: 0;
           right: 0;
-          height: 4px;
-          background: linear-gradient(90deg, #fbbf24, #f59e0b, #d97706, #fbbf24);
-          background-size: 200% 100%;
-          animation: gradientShift 3s ease infinite;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent);
       }
-      
-      @keyframes gradientShift {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
+
+      @keyframes slideUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
       }
-      
-      .card-body {
-          padding: 3rem 2.5rem 2.5rem;
-      }
-      
-      .login-title {
-          color: #1e40af;
-          font-weight: 700;
-          font-size: 24px;
-          margin-bottom: 2rem;
+
+      .logo-section {
           text-align: center;
+          margin-bottom: 2.5rem;
       }
-      
-      .form-label {
-          color: #1e40af;
-          font-weight: 600;
-          margin-bottom: 8px;
+
+      .logo {
+          width: 80px;
+          height: 80px;
+          margin: 0 auto 1.5rem;
+          background: var(--bg-secondary);
+          border-radius: var(--radius-lg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: var(--shadow-medium);
+          transition: transform 0.3s ease;
       }
-      
-      .form-control {
-          border-radius: 15px;
-          border: 2px solid #e2e8f0;
-          padding: 15px 20px;
-          transition: all 0.3s ease;
-          font-size: 16px;
-          background: rgba(248, 250, 252, 0.8);
+
+      .logo:hover { transform: scale(1.05); }
+
+      .logo img {
+          width: 60px;
+          height: 60px;
+          object-fit: contain;
+          border-radius: var(--radius-sm);
       }
-      
-      .form-control:focus {
-          border-color: #fbbf24;
-          box-shadow: 0 0 0 0.25rem rgba(251, 191, 36, 0.25);
-          background: white;
-          transform: translateY(-2px);
-      }
-      
-      .btn-primary {
-          background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-          border: none;
-          border-radius: 15px;
-          padding: 15px;
+
+      .school-name {
+          font-size: 1.5rem;
           font-weight: 700;
-          font-size: 16px;
+          color: var(--text-primary);
+          margin-bottom: 0.5rem;
+      }
+
+      .school-subtitle {
+          font-size: 0.875rem;
+          color: var(--text-secondary);
+          font-weight: 500;
+      }
+
+      .form-header {
+          text-align: center;
+          margin-bottom: 2rem;
+      }
+
+      .form-title {
+          font-size: 1.75rem;
+          font-weight: 700;
+          color: var(--text-primary);
+          margin-bottom: 0.5rem;
+      }
+
+      .form-subtitle {
+          font-size: 0.875rem;
+          color: var(--text-secondary);
+          font-weight: 400;
+      }
+
+      .form-group {
+          margin-bottom: 1.5rem;
+          position: relative;
+      }
+
+      .form-label {
+          display: block;
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: var(--text-primary);
+          margin-bottom: 0.75rem;
+          letter-spacing: 0.025em;
+      }
+
+      .input-wrapper { position: relative; }
+
+      .input-icon {
+          position: absolute;
+          left: 1rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: var(--text-light);
+          font-size: 1.125rem;
+          transition: color 0.3s ease;
+          z-index: 5;
+      }
+
+      .form-input {
+          width: 100%;
+          padding: 1rem 1rem 1rem 3rem;
+          border: 2px solid #d1d5db;
+          border-radius: var(--radius-md);
+          background: #ffffffcc;
+          font-size: 1rem;
+          color: var(--text-primary);
           transition: all 0.3s ease;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
+          outline: none;
+      }
+
+      .form-input::placeholder { color: #9ca3af; }
+
+      .form-input:focus {
+          border-color: var(--primary-light);
+          background: #fff;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(37, 99, 235, 0.2);
+      }
+
+      .form-input:focus + .input-icon {
+          color: var(--primary-light);
+      }
+
+      .form-options {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 2rem;
+          font-size: 0.875rem;
+      }
+
+      .checkbox-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+      }
+
+      .checkbox {
+          width: 1.125rem;
+          height: 1.125rem;
+          border: 2px solid #9ca3af;
+          border-radius: 4px;
+          background: white;
+          cursor: pointer;
+          position: relative;
+          transition: all 0.3s ease;
+      }
+
+      .checkbox:checked {
+          background: var(--primary-light);
+          border-color: var(--primary-light);
+      }
+
+      .checkbox:checked::after {
+          content: '✓';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          color: white;
+          font-size: 0.75rem;
+          font-weight: bold;
+      }
+
+      .checkbox-label {
+          color: var(--text-secondary);
+          cursor: pointer;
+          user-select: none;
+      }
+
+      .forgot-link {
+          color: var(--primary-light);
+          text-decoration: none;
+          font-weight: 500;
+          transition: color 0.3s ease;
+      }
+
+      .forgot-link:hover { color: var(--primary-dark); }
+
+      .login-button {
+          width: 100%;
+          padding: 1rem 2rem;
+          background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+          border: none;
+          border-radius: var(--radius-md);
+          color: white;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
           position: relative;
           overflow: hidden;
+          letter-spacing: 0.025em;
+          margin-bottom: 1.5rem;
       }
-      
-      .btn-primary::before {
+
+      .login-button::before {
           content: '';
           position: absolute;
           top: 0;
           left: -100%;
           width: 100%;
           height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-          transition: left 0.5s;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+          transition: left 0.6s ease;
       }
-      
-      .btn-primary:hover::before {
-          left: 100%;
-      }
-      
-      .btn-primary:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 10px 25px rgba(30, 64, 175, 0.4);
-          background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-      }
-      
-      .btn-social {
-          border-radius: 12px;
-          border: 2px solid #e2e8f0;
-          transition: all 0.3s ease;
-          padding: 10px;
-          background: white;
-      }
-      
-      .btn-social:hover {
-          border-color: #fbbf24;
+
+      .login-button:hover::before { left: 100%; }
+      .login-button:hover {
           transform: translateY(-2px);
-          box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+          box-shadow: 0 12px 35px rgba(37, 99, 235, 0.4);
       }
-      
-      .social-section {
-          margin-top: 2rem;
-          padding-top: 2rem;
-          border-top: 1px solid #e2e8f0;
-      }
-      
-      .social-title {
+      .login-button:active { transform: translateY(0); }
+      .login-button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+      .divider {
           text-align: center;
-          color: #64748b;
-          font-size: 14px;
-          margin-bottom: 1rem;
+          margin: 1.5rem 0;
           position: relative;
+          color: var(--text-light);
+          font-size: 0.875rem;
       }
-      
-      .social-title::before,
-      .social-title::after {
+
+      .divider::before {
           content: '';
           position: absolute;
           top: 50%;
-          width: 40px;
-          height: 1px;
-          background: #e2e8f0;
-      }
-      
-      .social-title::before {
           left: 0;
-      }
-      
-      .social-title::after {
           right: 0;
+          height: 1px;
+          background: #d1d5db;
       }
-      
-      .auth-footer {
-          text-align: center;
-          margin-top: 2rem;
-          color: rgba(255,255,255,0.9);
-          font-size: 14px;
+
+      .divider span {
+          background: var(--bg-glass);
+          padding: 0 1rem;
+          position: relative;
+          z-index: 1;
       }
-      
-      .auth-footer a {
-          color: #fbbf24;
+
+      .social-login {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 0.75rem;
+          margin-bottom: 2rem;
+      }
+
+      .social-button {
+          padding: 0.75rem;
+          background: #f3f4f6;
+          border: 1px solid #e5e7eb;
+          border-radius: var(--radius-md);
+          color: var(--text-primary);
           text-decoration: none;
-          font-weight: 500;
-          transition: color 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s ease;
       }
-      
-      .auth-footer a:hover {
-          color: #f59e0b;
-          text-decoration: underline;
+
+      .social-button:hover {
+          background: #e5e7eb;
+          transform: translateY(-2px);
       }
-      
-      .form-check-input:checked {
-          background-color: #1e40af;
-          border-color: #1e40af;
+
+      .footer {
+          text-align: center;
+          font-size: 0.75rem;
+          color: var(--text-secondary);
       }
-      
-      .form-check-label {
-          color: #64748b;
-          font-size: 14px;
+
+      .footer a {
+          color: var(--primary-light);
+          text-decoration: none;
       }
-      
-      .alert-danger {
-          border-radius: 12px;
-          border: none;
-          background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-          color: #dc2626;
-          border-left: 4px solid #dc2626;
+
+      .footer a:hover { text-decoration: underline; }
+
+      .error-alert {
+          background: #fee2e2;
+          border: 1px solid #fca5a5;
+          border-radius: var(--radius-md);
+          padding: 1rem;
+          margin-bottom: 1.5rem;
+          color: #b91c1c;
+          font-size: 0.875rem;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          animation: shake 0.5s ease-in-out;
       }
-      
-      @media (max-width: 576px) {
-          .auth-main {
-              padding: 15px;
-          }
-          
-          .card-body {
-              padding: 2rem 1.5rem;
-          }
-          
-          .logo {
-              width: 100px;
-              height: 100px;
-              font-size: 28px;
-          }
-          
-          .school-name {
-              font-size: 24px;
-          }
-          
-          .school-subtitle {
-              font-size: 14px;
-          }
-          
-          .logo-container {
-              padding: 25px;
-          }
+
+      @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
       }
-      
-      /* Animaciones adicionales */
-      .card {
-          animation: fadeInUp 0.8s ease-out;
+
+      .loading {
+          display: inline-block;
+          width: 20px;
+          height: 20px;
+          border: 2px solid #d1d5db;
+          border-radius: 50%;
+          border-top: 2px solid var(--primary-light);
+          animation: spin 1s linear infinite;
       }
-      
-      .auth-header {
-          animation: fadeInDown 0.8s ease-out;
+
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+      @media (max-width: 480px) {
+          .login-card { padding: 2rem 1.5rem 1.5rem; }
+          .logo { width: 70px; height: 70px; }
+          .logo img { width: 50px; height: 50px; }
+          .school-name { font-size: 1.25rem; }
+          .form-title { font-size: 1.5rem; }
       }
-      
-      @keyframes fadeInUp {
-          from {
-              opacity: 0;
-              transform: translateY(30px);
-          }
-          to {
-              opacity: 1;
-              transform: translateY(0);
+
+      @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after {
+              animation-duration: 0.01ms !important;
+              animation-iteration-count: 1 !important;
+              transition-duration: 0.01ms !important;
           }
       }
-      
-      @keyframes fadeInDown {
-          from {
-              opacity: 0;
-              transform: translateY(-30px);
-          }
-          to {
-              opacity: 1;
-              transform: translateY(0);
-          }
+
+      .form-input:focus,
+      .login-button:focus,
+      .social-button:focus,
+      .checkbox:focus {
+          outline: 2px solid var(--primary-light);
+          outline-offset: 2px;
       }
   </style>
+
 </head>
-<!-- [Head] end -->
-<!-- [Body] Start -->
 
 <body>
-  <!-- [ Pre-loader ] start -->
-  <div class="loader-bg">
-    <div class="loader-track">
-      <div class="loader-fill"></div>
-    </div>
-  </div>
-  <!-- [ Pre-loader ] End -->
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo-section">
+                <div class="logo">
+                    <img src="assets/images/logocoelgio.jpeg" alt="Logo <?php echo $nombre_sistema; ?>">
+                </div>
+                <h1 class="school-name"><?php echo $nombre_sistema; ?></h1>
+                <p class="school-subtitle">Sistema de Gestión Académica</p>
+            </div>
 
-  <div class="auth-main">
-    <div class="auth-wrapper">
-      <div class="auth-header">
-        <div class="logo-container">
-          <div class="logo">
-            <img src="assets/images/logocoelgio.jpeg" alt="Logo Colegio San José" style="width: 90px; height: 90px; object-fit: contain;">
-          </div>
-        </div>
-        <div class="school-info">
-          <h1 class="school-name"><?php echo $nombre_sistema; ?></h1>
-          <p class="school-subtitle">Sistema de Gestión Académica</p>
-        </div>
-      </div>
-      
-      <div class="card">
-        <div class="card-body">
-          <?php if (!empty($login_error)): ?>
-          <div class="alert alert-danger" role="alert">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            <?php echo $login_error; ?>
-          </div>
-          <?php endif; ?>
-          
-          <h3 class="login-title">Iniciar Sesión</h3>
-          
-          <form id="loginForm" method="POST" action="">
-            <div class="form-group mb-3">
-              <label class="form-label">
-                <i class="fas fa-envelope me-2"></i>Correo Electrónico
-              </label>
-              <input type="email" class="form-control" name="email" placeholder="Ingresa tu correo electrónico" required>
+            <div class="form-header">
+                <h2 class="form-title">Bienvenido</h2>
+                <p class="form-subtitle">Inicia sesión para acceder a tu cuenta</p>
             </div>
-            
-            <div class="form-group mb-4">
-              <label class="form-label">
-                <i class="fas fa-lock me-2"></i>Contraseña
-              </label>
-              <input type="password" class="form-control" name="password" placeholder="Ingresa tu contraseña" required>
-            </div>
-            
-            <div class="d-flex justify-content-between align-items-center mb-4">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="customCheckc1" name="remember">
-                <label class="form-check-label" for="customCheckc1">
-                  Recordarme
-                </label>
-              </div>
-              <a href="#" class="text-decoration-none" style="color: #fbbf24; font-weight: 500;">
-                ¿Olvidaste tu contraseña?
-              </a>
-            </div>
-            
-            <div class="d-grid">
-              <button type="submit" class="btn btn-primary" name="login">
-                <i class="fas fa-sign-in-alt me-2"></i>Acceder
-              </button>
-            </div>
-          </form>
-          
-          <div class="social-section">
-            <div class="social-title">O continúa con</div>
-            <div class="row g-2">
-              <div class="col-4">
-                <button type="button" class="btn btn-social w-100">
-                  <img src="assets/images/authentication/google.svg" alt="Google" width="20">
-                </button>
-              </div>
-              <div class="col-4">
-                <button type="button" class="btn btn-social w-100">
-                  <img src="assets/images/authentication/facebook.svg" alt="Facebook" width="20">
-                </button>
-              </div>
-              <div class="col-4">
-                <button type="button" class="btn btn-social w-100">
-                  <img src="assets/images/authentication/twitter.svg" alt="Twitter" width="20">
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="auth-footer">
-        <div class="row align-items-center">
-          <div class="col">
-            <p class="m-0">© 2024 <a href="#">Colegio San José</a> - Todos los derechos reservados</p>
-          </div>
-          <div class="col-auto">
-            <div class="d-flex gap-3">
-              <a href="#">Política de Privacidad</a>
-              <a href="#">Términos de Uso</a>
-              <a href="#">Soporte</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Required Js -->
-  <script src="assets/js/plugins/popper.min.js"></script>
-  <script src="assets/js/plugins/simplebar.min.js"></script>
-  <script src="assets/js/plugins/bootstrap.min.js"></script>
-  <script src="assets/js/fonts/custom-font.js"></script>
-  <script src="assets/js/pcoded.js"></script>
-  <script src="assets/js/plugins/feather.min.js"></script>
-  
-  <!-- SweetAlert2 para mensajes bonitos -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-  
-  <script>
-    layout_change('light');
-    change_box_container('false');
-    layout_rtl_change('false');
-    preset_change("preset-1");
-    font_change("Poppins");
-    
-    // Animación suave para los campos de entrada
-    document.querySelectorAll('.form-control').forEach(input => {
-      input.addEventListener('focus', function() {
-        this.parentElement.style.transform = 'translateY(-2px)';
-      });
-      
-      input.addEventListener('blur', function() {
-        this.parentElement.style.transform = 'translateY(0)';
-      });
-    });
-    
-    // Efecto de ripple en el botón
-    document.querySelector('.btn-primary').addEventListener('click', function(e) {
-      let ripple = document.createElement('span');
-      let rect = this.getBoundingClientRect();
-      let size = Math.max(rect.width, rect.height);
-      let x = e.clientX - rect.left - size / 2;
-      let y = e.clientY - rect.top - size / 2;
-      
-      ripple.style.width = ripple.style.height = size + 'px';
-      ripple.style.left = x + 'px';
-      ripple.style.top = y + 'px';
-      ripple.style.position = 'absolute';
-      ripple.style.borderRadius = '50%';
-      ripple.style.background = 'rgba(255,255,255,0.6)';
-      ripple.style.transform = 'scale(0)';
-      ripple.style.animation = 'ripple 0.6s linear';
-      ripple.style.pointerEvents = 'none';
-      
-      this.appendChild(ripple);
-      
-      setTimeout(() => {
-        ripple.remove();
-      }, 600);
-    });
-    
-    // Agregar keyframes para el efecto ripple
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes ripple {
-        to {
-          transform: scale(4);
-          opacity: 0;
-        }
-      }
-    `;
-    document.head.appendChild(style);
-  </script>
+            <?php if (!empty($login_error)): ?>
+            <div class="error-alert">
+                <i class="fas fa-exclamation-circle"></i>
+                <span><?php echo $login_error; ?></span>
+            </div>
+            <?php endif; ?>
+
+            <form id="loginForm" method="POST" action="">
+                <div class="form-group">
+                    <label class="form-label">Correo Electrónico</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="email" 
+                            id="email"
+                            name="email" 
+                            class="form-input" 
+                            placeholder="tu@correo.com"
+                            required
+                        >
+                        <i class="fas fa-envelope input-icon"></i>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Contraseña</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="password" 
+                            id="password"
+                            name="password" 
+                            class="form-input" 
+                            placeholder="Tu contraseña"
+                            required
+                        >
+                        <i class="fas fa-lock input-icon"></i>
+                    </div>
+                </div>
+
+                <div class="form-options">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="remember" name="remember" class="checkbox">
+                        <label for="remember" class="checkbox-label">Recordarme</label>
+                    </div>
+                    <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <button type="submit" name="login" class="login-button">
+                    <span class="btn-text">Iniciar Sesión</span>
+                </button>
+            </form>
+
+            <div class="footer">
+                <p>&copy; 2025 <?php echo $nombre_sistema; ?>. Todos los derechos reservados.</p>
+                <p>
+                    <a href="#">Política de Privacidad</a> • 
+                    <a href="#">Términos de Servicio</a> • 
+                    <a href="#">Soporte</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Enhanced form interactions
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('loginForm');
+            const inputs = document.querySelectorAll('.form-input');
+            const loginBtn = document.getElementById('loginBtn');
+            
+            // Enhanced input interactions
+            inputs.forEach(input => {
+                const wrapper = input.closest('.input-wrapper');
+                const icon = wrapper.querySelector('.input-icon');
+                
+                input.addEventListener('focus', function() {
+                    wrapper.style.transform = 'translateY(-2px)';
+                    icon.style.color = 'var(--accent-light)';
+                });
+                
+                input.addEventListener('blur', function() {
+                    wrapper.style.transform = 'translateY(0)';
+                    if (!input.value) {
+                        icon.style.color = 'var(--text-light)';
+                    }
+                });
+                
+                // Real-time validation
+                input.addEventListener('input', function() {
+                    validateField(input);
+                });
+            });
+            
+            // Form submission with loading state
+            form.addEventListener('submit', function(e) {
+                const email = document.getElementById('email');
+                const password = document.getElementById('password');
+                
+                if (!validateForm()) {
+                    e.preventDefault();
+                    return;
+                }
+                
+                // Show loading state
+                loginBtn.disabled = true;
+                loginBtn.innerHTML = '<div class="loading"></div> Iniciando sesión...';
+            });
+            
+            // Field validation
+            function validateField(field) {
+                const wrapper = field.closest('.form-group');
+                let existingError = wrapper.querySelector('.field-error');
+                
+                if (existingError) {
+                    existingError.remove();
+                }
+                
+                let isValid = true;
+                let errorMessage = '';
+                
+                if (field.type === 'email') {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (field.value && !emailRegex.test(field.value)) {
+                        isValid = false;
+                        errorMessage = 'Ingresa un correo electrónico válido';
+                    }
+                } else if (field.type === 'password') {
+                    if (field.value && field.value.length < 5) {
+                        isValid = false;
+                        errorMessage = 'La contraseña debe tener al menos 5 caracteres';
+                    }
+                }
+                
+                if (!isValid) {
+                    const error = document.createElement('div');
+                    error.className = 'field-error';
+                    error.style.cssText = `
+                        color: #fca5a5;
+                        font-size: 0.75rem;
+                        margin-top: 0.5rem;
+                        animation: fadeIn 0.3s ease;
+                    `;
+                    error.textContent = errorMessage;
+                    wrapper.appendChild(error);
+                    
+                    field.style.borderColor = 'rgba(220, 38, 38, 0.5)';
+                } else {
+                    field.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                }
+                
+                return isValid;
+            }
+            
+            function validateForm() {
+                const email = document.getElementById('email');
+                const password = document.getElementById('password');
+                
+                const emailValid = validateField(email);
+                const passwordValid = validateField(password);
+                
+                if (!email.value) {
+                    showFieldError(email, 'El correo electrónico es requerido');
+                    return false;
+                }
+                
+                if (!password.value) {
+                    showFieldError(password, 'La contraseña es requerida');
+                    return false;
+                }
+                
+                return emailValid && passwordValid;
+            }
+            
+            function showFieldError(field, message) {
+                const wrapper = field.closest('.form-group');
+                let existingError = wrapper.querySelector('.field-error');
+                
+                if (existingError) {
+                    existingError.remove();
+                }
+                
+                const error = document.createElement('div');
+                error.className = 'field-error';
+                error.style.cssText = `
+                    color: #fca5a5;
+                    font-size: 0.75rem;
+                    margin-top: 0.5rem;
+                    animation: fadeIn 0.3s ease;
+                `;
+                error.textContent = message;
+                wrapper.appendChild(error);
+                
+                field.style.borderColor = 'rgba(220, 38, 38, 0.5)';
+                field.focus();
+            }
+            
+            // Keyboard navigation for social buttons
+            document.querySelectorAll('.social-button').forEach(btn => {
+                btn.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.click();
+                    }
+                });
+            });
+            
+            // Enhanced checkbox interaction
+            const checkbox = document.getElementById('remember');
+            checkbox.addEventListener('change', function() {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 150);
+            });
+        });
+        
+        // Add fadeIn animation keyframes
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Show success message if needed
+        <?php if (isset($_SESSION['login_success'])): ?>
+        Swal.fire({
+            icon: 'success',
+            title: '¡Bienvenido!',
+            text: 'Has iniciado sesión correctamente',
+            timer: 2000,
+            showConfirmButton: false
+        });
+        <?php unset($_SESSION['login_success']); ?>
+        <?php endif; ?>
+    </script>
 </body>
-<!-- [Body] end -->
 </html>

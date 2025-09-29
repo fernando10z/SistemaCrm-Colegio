@@ -78,7 +78,7 @@
             </li>
 
             <!-- 5. MÓDULO DE GESTIÓN FINANCIERA CRM -->
-            <li class="pc-item pc-caption">
+            <!-- <li class="pc-item pc-caption">
                 <label>Gestión Financiera</label>
                 <i class="ti ti-brand-chrome"></i>
             </li>
@@ -91,7 +91,7 @@
                 <li class="pc-item"><a class="pc-link" href="descuentos_planes.php">Descuentos y Planes</a></li>
                 <li class="pc-item"><a class="pc-link" href="deuda_consolidada.php">Deuda Consolidada</a></li>
                 </ul>
-            </li>
+            </li> -->
 
             <!-- 6. MÓDULO DE EXALUMNOS Y REENGANCHE -->
             <li class="pc-item pc-caption">
@@ -141,7 +141,7 @@
             </li>
 
             <!-- 10. MÓDULO DE INTEGRACIÓN EXTERNA -->
-            <li class="pc-item pc-caption">
+            <!-- <li class="pc-item pc-caption">
                 <label>Integraciones</label>
                 <i class="ti ti-brand-chrome"></i>
             </li>
@@ -153,7 +153,7 @@
                 <li class="pc-item"><a class="pc-link" href="apis_externas.php">APIs Externas</a></li>
                 <li class="pc-item"><a class="pc-link" href="logs_integracion.php">Logs y Monitoreo</a></li>
                 </ul>
-            </li>
+            </li> -->
 
             <li class="pc-item pc-caption">
                 <label>Página Web</label>

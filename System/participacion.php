@@ -623,50 +623,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
         <?php endif; ?>
         <!-- [ Mensaje del Sistema ] end -->
 
-        <!-- [ Ranking y Tipos de Eventos ] start -->
-        <div class="row mb-3">
-          <div class="col-md-8">
-            <div class="ranking-panel">
-              <h6 class="mb-3">Top 10 Familias Más Participativas (Últimos 12 Meses)</h6>
-              <?php 
-              if (!empty($ranking_familias)) {
-                foreach ($ranking_familias as $index => $familia) {
-                  $posicion = $index + 1;
-                  echo "<div class='ranking-item'>
-                          <span class='ranking-posicion'>#$posicion</span>
-                          <span class='ranking-familia'>Fam. " . htmlspecialchars($familia['apellido_principal']) . " (" . htmlspecialchars($familia['codigo_familia']) . ")</span>
-                          <span class='ranking-stats'>
-                            " . $familia['total_participaciones'] . " participaciones | " . 
-                            $familia['total_asistencias'] . " asistencias (" . $familia['porcentaje_asistencia'] . "%)
-                          </span>
-                        </div>";
-                }
-              } else {
-                echo "<div class='text-center text-muted'>No hay datos de participación disponibles</div>";
-              }
-              ?>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="tipos-evento-panel">
-              <h6 class="mb-3">Participación por Tipo de Evento</h6>
-              <?php foreach ($tipos_evento as $tipo): ?>
-              <div class="tipo-evento-item">
-                <div>
-                  <strong><?php echo ucfirst(str_replace('_', ' ', $tipo['tipo'])); ?></strong>
-                  <div class="small text-muted"><?php echo $tipo['total_eventos']; ?> eventos</div>
-                </div>
-                <div class="text-end">
-                  <div class="fw-bold"><?php echo $tipo['total_participaciones']; ?></div>
-                  <div class="small text-muted"><?php echo $tipo['tasa_asistencia_promedio']; ?>% asistencia</div>
-                </div>
-              </div>
-              <?php endforeach; ?>
-            </div>
-          </div>
-        </div>
-        <!-- [ Ranking y Tipos de Eventos ] end -->
-
         <!-- [ Main Content ] start -->
         <div class="row">          
           <div class="col-sm-12">

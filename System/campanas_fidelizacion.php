@@ -844,7 +844,8 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                                         "<button type='button' class='btn btn-outline-success btn-iniciar-evento' 
                                                 data-id='" . $row['id'] . "'
                                                 title='Iniciar Evento'>
-                                          <i class='ti ti-play'></i>
+                                            <i class='ti ti-player-play'></i>
+
                                         </button>" : "") . "
                                         " . ($row['estado'] == 'en_curso' || $row['estado'] == 'finalizado' ? 
                                         "<button type='button' class='btn btn-outline-warning btn-medir-impacto' 

@@ -728,71 +728,12 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
         <?php endif; ?>
         <!-- [ Mensaje del Sistema ] end -->
 
-        <!-- [ Stats Cards ] start -->
-        <div class="row mb-3">
-          <div class="col-sm-12">
-            <div class="card stats-card">
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-lg-2 col-md-4 col-sm-6 stat-item">
-                    <span class="stat-number"><?php echo number_format($stats['total_apoderados'] ?? 0); ?></span>
-                    <span class="stat-label">Total Apoderados</span>
-                  </div>
-                  <div class="col-lg-2 col-md-4 col-sm-6 stat-item">
-                    <span class="stat-number"><?php echo number_format($stats['colaboradores_estrella'] ?? 0); ?></span>
-                    <span class="stat-label">Colaboradores Estrella</span>
-                  </div>
-                  <div class="col-lg-2 col-md-4 col-sm-6 stat-item">
-                    <span class="stat-number"><?php echo number_format($stats['alto_compromiso'] ?? 0); ?></span>
-                    <span class="stat-label">Alto Compromiso</span>
-                  </div>
-                  <div class="col-lg-2 col-md-4 col-sm-6 stat-item">
-                    <span class="stat-number"><?php echo number_format($stats['muy_activos'] ?? 0); ?></span>
-                    <span class="stat-label">Muy Activos</span>
-                  </div>
-                  <div class="col-lg-2 col-md-4 col-sm-6 stat-item">
-                    <span class="stat-number"><?php echo number_format($stats['problematicos'] ?? 0); ?></span>
-                    <span class="stat-label">Problemáticos</span>
-                  </div>
-                  <div class="col-lg-2 col-md-4 col-sm-6 stat-item">
-                    <span class="stat-number">
-                      <?php 
-                        $total = $stats['total_apoderados'] ?? 0;
-                        $positivos = ($stats['colaboradores_estrella'] ?? 0) + ($stats['alto_compromiso'] ?? 0);
-                        echo $total > 0 ? round(($positivos / $total) * 100, 1) . '%' : '0%';
-                      ?>
-                    </span>
-                    <span class="stat-label">Tasa Positiva</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- [ Stats Cards ] end -->
-
         <!-- [ Segmentación Panel ] start -->
         <div class="row mb-3">
           <div class="col-sm-12">
             <div class="segmentacion-panel">
               <h6 class="mb-3"><i class="ti ti-chart-donut me-2"></i>Segmentación Rápida por Categorías</h6>
-              <div class="d-flex flex-wrap">
-                <span class="segmento-item categoria-colaborador_estrella" onclick="filtrarPorCategoria('colaborador_estrella')">
-                  Colaboradores Estrella (<?php echo $stats['colaboradores_estrella'] ?? 0; ?>)
-                </span>
-                <span class="segmento-item categoria-comprometido" onclick="filtrarPorCategoria('comprometido')">
-                  Comprometidos (<?php echo ($stats['alto_compromiso'] ?? 0) - ($stats['colaboradores_estrella'] ?? 0); ?>)
-                </span>
-                <span class="segmento-item categoria-muy_participativo" onclick="filtrarPorCategoria('muy_participativo')">
-                  Muy Participativos (<?php echo $stats['muy_activos'] ?? 0; ?>)
-                </span>
-                <span class="segmento-item categoria-regular" onclick="filtrarPorCategoria('regular')">
-                  Regulares
-                </span>
-                <span class="segmento-item categoria-problematico" onclick="filtrarPorCategoria('problematico')">
-                  Problemáticos (<?php echo $stats['problematicos'] ?? 0; ?>)
-                </span>
-              </div>
+
             </div>
           </div>
         </div>
