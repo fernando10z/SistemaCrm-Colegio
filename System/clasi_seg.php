@@ -754,7 +754,7 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   </small>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                  <button type="button" class="btn btn-outline-warning btn-sm" onclick="recalcularTodo()">
+                  <!-- <button type="button" class="btn btn-outline-warning btn-sm" onclick="recalcularTodo()">
                     <i class="ti ti-refresh me-1"></i>
                     Recalcular Todo
                   </button>
@@ -765,6 +765,10 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalEvaluarCompromiso">
                     <i class="ti ti-heart me-1"></i>
                     Evaluar Compromiso
+                  </button> -->
+                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="exportarInteraccionesPDF()">
+                    <i class="ti ti-file-type-pdf me-1"></i>
+                    Generar PDF
                   </button>
                   <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalGenerarSegmentacion">
                     <i class="ti ti-chart-pie me-1"></i>

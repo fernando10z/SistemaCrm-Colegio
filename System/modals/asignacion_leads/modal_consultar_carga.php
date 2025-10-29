@@ -38,12 +38,12 @@
                             Tareas y Seguimiento
                         </button>
                     </li>
-                    <li class="nav-item" role="presentation">
+                    <!-- <li class="nav-item" role="presentation">
                         <button class="nav-link" id="rendimiento-tab" data-bs-toggle="tab" data-bs-target="#rendimiento" type="button" role="tab">
                             <i class="ti ti-trending-up me-1"></i>
                             Rendimiento
                         </button>
-                    </li>
+                    </li> -->
                 </ul>
 
                 <!-- Contenido de las pestañas -->
@@ -159,14 +159,14 @@
             </div>
             
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-primary" onclick="exportarCargaPDF()">
+                <!-- <button type="button" class="btn btn-outline-primary" onclick="exportarCargaPDF()">
                     <i class="ti ti-file-pdf me-1"></i>
                     Exportar PDF
                 </button>
                 <button type="button" class="btn btn-outline-warning" onclick="sugerirOptimizacion()">
                     <i class="ti ti-bulb me-1"></i>
                     Sugerir Optimización
-                </button>
+                </button> -->
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>

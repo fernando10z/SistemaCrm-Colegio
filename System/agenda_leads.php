@@ -417,10 +417,10 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                       <i class="ti ti-calendar me-1"></i>
                       Consultar Agenda
                     </button>
-                    <button type="button" class="btn btn-warning btn-sm" onclick="configurarRecordatorios()">
-                      <i class="ti ti-bell me-1"></i>
-                      Recordatorios
-                    </button>
+                      <!-- <button type="button" class="btn btn-warning btn-sm" onclick="configurarRecordatorios()">
+                        <i class="ti ti-bell me-1"></i>
+                        Recordatorios
+                      </button> -->
                   </div>
                 </div>
               </div>
@@ -587,26 +587,35 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                               echo "<td>
                                       <span class='usuario-responsable'>" . htmlspecialchars($row['usuario_completo'] ?? 'Sin asignar') . "</span>
                                     </td>";
-                              echo "<td>
-                                      <div class='btn-grupo-interacciones'>
-                                        <button type='button' class='btn btn-outline-warning btn-reprogramar' 
-                                                data-id='" . $row['id'] . "'
-                                                title='Reprogramar'>
-                                          <i class='ti ti-calendar-time'></i>
-                                        </button>
-                                        <button type='button' class='btn btn-outline-success btn-registrar-resultado' 
-                                                data-id='" . $row['id'] . "'
-                                                data-asunto='" . htmlspecialchars($row['asunto']) . "'
-                                                title='Registrar Resultado'>
-                                          <i class='ti ti-check'></i>
-                                        </button>
-                                        <button type='button' class='btn btn-outline-info btn-ver-detalle' 
-                                                data-id='" . $row['id'] . "'
-                                                title='Ver Detalle'>
-                                          <i class='ti ti-eye'></i>
-                                        </button>
-                                      </div>
-                                    </td>";
+                                  echo "<td>
+                                      <div class='btn-grupo-interacciones'>";
+                                          
+                                          if ($row['resultado'] != 'exitoso') { 
+                                  echo "      <button type='button' class='btn btn-outline-warning btn-reprogramar' 
+                                                  data-id='" . $row['id'] . "' title='Reprogramar'>
+                                                  <i class='ti ti-calendar-time'></i>
+                                              </button>";
+                                    }
+                                          // --- AQUÍ LA CONDICIÓN ---
+                                          // Solo muestra el botón si el resultado NO es 'exitoso'
+                                          if ($row['resultado'] != 'exitoso') { 
+                                  echo "          <button type='button' class='btn btn-outline-success btn-registrar-resultado' 
+                                                      data-id='" . $row['id'] . "'
+                                                      data-asunto='" . htmlspecialchars($row['asunto']) . "'
+                                                      title='Registrar Resultado'>
+                                                      <i class='ti ti-check'></i>
+                                                  </button>";
+                                          }
+                                          // --- FIN DE LA CONDICIÓN ---
+
+                                          // Botón Ver Detalle (se muestra siempre)
+                                  echo "      <button type='button' class='btn btn-outline-info btn-ver-detalle' 
+                                                  data-id='" . $row['id'] . "' title='Ver Detalle'>
+                                                  <i class='ti ti-eye'></i>
+                                              </button>";
+
+                                  echo "  </div>
+                                      </td>";
                               echo "</tr>";
                           }
                       } else {
@@ -638,12 +647,16 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
         <!-- [ Main Content ] end -->
       </div>
     </section>
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 
     <!-- Incluir Modales -->
     <?php include 'modals/agenda_leads/modal_programar.php'; ?>
     <?php include 'modals/agenda_leads/modal_reprogramar.php'; ?>
     <?php include 'modals/agenda_leads/modal_registrar_resultado.php'; ?>
     <?php include 'modals/agenda_leads/modal_consultar_agenda.php'; ?>
+    <?php include 'modals/agenda_leads/modal_detalle_interaccion.php'; ?>
 
     <?php include 'includes/footer.php'; ?>
     
@@ -673,52 +686,52 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
     
     <script>
       $(document).ready(function() {
-            // Inicializar DataTable
-            var table = $("#interacciones-table").DataTable({
-              "language": {
-                "decimal": "",
-                "emptyTable": "No hay interacciones disponibles en la tabla",
-                "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                "infoEmpty": "Mostrando 0 a 0 de 0 registros",
-                "infoFiltered": "(filtrado de _MAX_ registros totales)",
-                "infoPostFix": "",
-                "thousands": ",",
-                "lengthMenu": "Mostrar _MENU_ registros",
-                "loadingRecords": "Cargando...",
-                "processing": "Procesando...",
-                "search": "Buscar:",
-                "zeroRecords": "No se encontraron registros coincidentes",
-                "paginate": {
-                  "first": "Primero",
-                  "last": "Último",
-                  "next": "Siguiente",
-                  "previous": "Anterior"
-                }
-              },
-              "pageLength": 25,
-              "order": [[ 4, "asc" ]], // Ordenar por fecha programada
-              "columnDefs": [
-                { "orderable": false, "targets": 10 } // Deshabilitar ordenación en columna de acciones
-              ],
-              "initComplete": function () {
-                this.api().columns().every(function (index) {
-                  var column = this;
-                  
-                  if (index < 10) { // Solo filtros para las primeras 10 columnas
-                    var title = $(column.header()).text();
-                    var input = $('<input type="text" class="form-control form-control-sm" placeholder="Buscar ' + title + '" />')
-                      .appendTo($(column.footer()).empty())
-                      .on('keyup change clear', function () {
-                        if (column.search() !== this.value) {
-                          column.search(this.value).draw();
-                        }
-                      });
-                  } else {
-                    $(column.footer()).html('<strong>Acciones</strong>');
-                  }
-                });
-              }
+        // Inicializar DataTable
+        var table = $("#interacciones-table").DataTable({
+          "language": {
+            "decimal": "",
+            "emptyTable": "No hay interacciones disponibles en la tabla", 
+            "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+            "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+            "infoFiltered": "(filtrado de _MAX_ registros totales)",
+            "infoPostFix": "",
+            "thousands": ",",
+            "lengthMenu": "Mostrar _MENU_ registros",
+            "loadingRecords": "Cargando...",
+            "processing": "Procesando...", 
+            "search": "Buscar:",
+            "zeroRecords": "No se encontraron registros coincidentes",
+            "paginate": {
+          "first": "Primero",
+          "last": "Último", 
+          "next": "Siguiente",
+          "previous": "Anterior"
+            }
+          },
+          "pageLength": 10,
+          "order": [[ 0, "desc" ]], // Ordenar por ID ascendente
+          "columnDefs": [
+            { "orderable": false, "targets": 10 } // Deshabilitar ordenación en columna de acciones
+          ],
+          "initComplete": function () {
+            this.api().columns().every(function (index) {
+          var column = this;
+          
+          if (index < 10) { // Solo filtros para las primeras 10 columnas
+            var title = $(column.header()).text();
+            var input = $('<input type="text" class="form-control form-control-sm" placeholder="Buscar ' + title + '" />')
+              .appendTo($(column.footer()).empty())
+              .on('keyup change clear', function () {
+            if (column.search() !== this.value) {
+              column.search(this.value).draw();
+            }
+              });
+          } else {
+            $(column.footer()).html('<strong>Acciones</strong>');
+          }
             });
+          }
+        });
 
             // Función para exportar interacciones a PDF
             window.exportarInteraccionesPDF = function() {
@@ -855,8 +868,138 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
             $('[title]').tooltip();
       });
     </script>
-    <!-- [Page Specific JS] end -->
-    <script src="assets/js/mensajes_sistema.js"></script>
+
+        <script>
+            $(document).ready(function() {
+          // Mostrar/ocultar campo de fecha de seguimiento
+          $('#requiere_seguimiento').change(function() {
+              if ($(this).is(':checked')) {
+                  $('#div_fecha_seguimiento').slideDown();
+                  $('#fecha_proximo_seguimiento').prop('required', true);
+              } else {
+                  $('#div_fecha_seguimiento').slideUp();
+                  $('#fecha_proximo_seguimiento').prop('required', false);
+                  $('#fecha_proximo_seguimiento').val('');
+              }
+          });
+
+          // Mostrar info del lead seleccionado
+          $('#lead_id').change(function() {
+              var selected = $(this).find(':selected');
+              var telefono = selected.data('telefono');
+              var email = selected.data('email');
+              var contacto = selected.data('contacto');
+              
+              var info = '';
+              if (contacto) info += 'Contacto: ' + contacto;
+              if (telefono) info += (info ? ' | ' : '') + 'Tel: ' + telefono;
+              if (email) info += (info ? ' | ' : '') + 'Email: ' + email;
+              
+              $('#info_lead').text(info);
+          });
+
+          // Limitar duración a 3 dígitos
+          $('#duracion_minutos').on('input', function() {
+              if (this.value.length > 3) {
+                  this.value = this.value.slice(0, 3);
+              }
+              if (this.value > 999) {
+                  this.value = 999;
+              }
+          });
+
+          // Establecer fecha mínima (hoy)
+          var today = new Date().toISOString().split('T')[0];
+          $('#fecha_programada').attr('min', today);
+          $('#fecha_proximo_seguimiento').attr('min', today);
+
+          // Submit del formulario PROGRAMAR
+          $('#formProgramarInteraccion').submit(function(e) {
+              e.preventDefault();
+              
+              // Validación de duración
+              var duracion = $('#duracion_minutos').val();
+              if (duracion && (duracion < 1 || duracion > 999)) {
+                  Swal.fire({
+                      icon: 'warning',
+                      title: 'Duración Inválida',
+                      text: 'La duración debe estar entre 1 y 999 minutos',
+                      confirmButtonColor: '#ffc107'
+                  });
+                  return false;
+              }
+              
+              var formData = $(this).serialize();
+              
+              // Mostrar loading
+              Swal.fire({
+                  title: 'Programando...',
+                  text: 'Por favor espere',
+                  allowOutsideClick: false,
+                  didOpen: () => {
+                      Swal.showLoading();
+                  }
+              });
+              
+              $.ajax({
+                  url: 'actions/programar_interaccion.php',
+                  method: 'POST',
+                  data: formData,
+                  dataType: 'json',
+                  cache: false,
+                  success: function(response) {
+                      Swal.close();
+                      
+                      if (response.success) {
+                          Swal.fire({
+                              icon: 'success',
+                              title: '¡Éxito!',
+                              text: response.message,
+                              confirmButtonColor: '#28a745',
+                              timer: 2000,
+                              timerProgressBar: true,
+                              showConfirmButton: false
+                          }).then(() => {
+                              $('#modalProgramarInteraccion').modal('hide');
+                              $('#formProgramarInteraccion')[0].reset();
+                              $('#info_lead').text('');
+                              location.reload();
+                          });
+                      } else {
+                          Swal.fire({
+                              icon: 'error',
+                              title: 'Error',
+                              text: response.message,
+                              confirmButtonColor: '#dc3545'
+                          });
+                      }
+                  },
+                  error: function(xhr, status, error) {
+                      Swal.close();
+                      
+                      console.error('Error AJAX:', xhr);
+                      
+                      var mensaje = 'Error de conexión con el servidor';
+                      
+                      if (xhr.responseJSON && xhr.responseJSON.message) {
+                          mensaje = xhr.responseJSON.message;
+                      } else if (xhr.responseText) {
+                          console.log('Respuesta:', xhr.responseText);
+                          mensaje = 'Error del servidor';
+                      }
+                      
+                      Swal.fire({
+                          icon: 'error',
+                          title: 'Error de Conexión',
+                          text: mensaje,
+                          confirmButtonColor: '#dc3545'
+                      });
+                  }
+              });
+          });
+      });
+    </script>
+
   </body>
   <!-- [Body] end -->
 </html>

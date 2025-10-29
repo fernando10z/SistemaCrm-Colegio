@@ -4,43 +4,6 @@ session_start();
 // Incluir conexión a la base de datos
 include 'bd/conexion.php';
 
-// REMOVER TODO ESTE BLOQUE DE PROCESAMIENTO POST - YA NO ES NECESARIO
-/*
-// Procesar acciones POST
-$mensaje_sistema = '';
-$tipo_mensaje = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
-    switch ($_POST['accion']) {
-        case 'crear_boletin':
-            $mensaje_sistema = procesarCrearBoletin($conn, $_POST);
-            $tipo_mensaje = strpos($mensaje_sistema, 'Error') !== false ? 'error' : 'success';
-            break;
-            
-        case 'programar_envio_masivo':
-            $mensaje_sistema = procesarProgramarEnvioMasivo($conn, $_POST);
-            $tipo_mensaje = strpos($mensaje_sistema, 'Error') !== false ? 'error' : 'success';
-            break;
-            
-        case 'personalizar_contenido':
-            $mensaje_sistema = procesarPersonalizarContenido($conn, $_POST);
-            $tipo_mensaje = strpos($mensaje_sistema, 'Error') !== false ? 'error' : 'success';
-            break;
-            
-        case 'analizar_metricas':
-            $mensaje_sistema = procesarAnalizarMetricas($conn, $_POST);
-            $tipo_mensaje = strpos($mensaje_sistema, 'Error') !== false ? 'error' : 'success';
-            break;
-    }
-}
-
-// TAMBIÉN REMOVER TODAS LAS FUNCIONES:
-// function procesarCrearBoletin($conn, $data) { ... }
-// function procesarProgramarEnvioMasivo($conn, $data) { ... }
-// function procesarPersonalizarContenido($conn, $data) { ... }
-// function procesarAnalizarMetricas($conn, $data) { ... }
-*/
-
 // Consulta para obtener los boletines con información de tablas relacionadas
 $sql = "SELECT 
     pm.id,
@@ -483,7 +446,7 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   </small>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                  <button type="button" class="btn btn-outline-info btn-sm" onclick="analizarMetricas()">
+                  <!-- <button type="button" class="btn btn-outline-info btn-sm" onclick="analizarMetricas()">
                     <i class="ti ti-chart-line me-1"></i>
                     Analizar Métricas
                   </button>
@@ -494,6 +457,10 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalProgramarEnvio">
                     <i class="ti ti-send me-1"></i>
                     Programar Envío
+                  </button> -->
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="exportarInteraccionesPDF()">
+                    <i class="ti ti-file-type-pdf me-1"></i>
+                    Generar PDF
                   </button>
                   <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalCrearBoletin">
                     <i class="ti ti-file-plus me-1"></i>

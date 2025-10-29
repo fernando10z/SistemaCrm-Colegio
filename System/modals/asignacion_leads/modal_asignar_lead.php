@@ -159,13 +159,6 @@
                         <label class="form-label">Observaciones</label>
                         <textarea class="form-control" name="observaciones" id="observaciones_asignacion" rows="3" placeholder="Motivo de la asignación, instrucciones especiales, etc."></textarea>
                     </div>
-
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="notificar_responsable" id="notificar_responsable" checked>
-                        <label class="form-check-label" for="notificar_responsable">
-                            Notificar al responsable por email/WhatsApp
-                        </label>
-                    </div>
                 </div>
                 
                 <div class="modal-footer">
@@ -206,11 +199,26 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
 $(document).ready(function() {
+
+    // Función para abrir modal de asignación
+    window.abrirModalAsignar = function(usuarioId, usuarioNombre) {
+        $('#asignar_usuario_id').val(usuarioId);
+        $('#asignar_usuario_nombre').text(usuarioNombre);
+        $('#formAsignarLead')[0].reset();
+        $('#tipo_asignacion').val('').trigger('change');
+        $('#modalAsignarLead').modal('show');
+    };
+
+
+
     // Manejar cambio de tipo de asignación
     $('#tipo_asignacion').change(function() {
         var tipo = $(this).val();
@@ -236,19 +244,156 @@ $(document).ready(function() {
         }
     });
 
+    // Submit del formulario con SweetAlert2
+    $('#formAsignarLead').on('submit', function(e) {
+        e.preventDefault();
+        
+        // Validar que haya usuario_id
+        var usuarioId = $('#asignar_usuario_id').val();
+        if (!usuarioId) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se ha especificado el usuario responsable'
+            });
+            return;
+        }
+        
+        // Validar tipo de asignación
+        var tipoAsignacion = $('#tipo_asignacion').val();
+        if (!tipoAsignacion) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Debe seleccionar un tipo de asignación'
+            });
+            return;
+        }
+        
+        // Validar según el tipo
+        if (tipoAsignacion === 'individual') {
+            var leadId = $('#lead_individual').val();
+            if (!leadId) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Debe seleccionar un lead'
+                });
+                return;
+            }
+        } else if (tipoAsignacion === 'multiple') {
+            var leadsIds = $('#leads_multiple').val();
+            if (!leadsIds || leadsIds.length === 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Debe seleccionar al menos un lead'
+                });
+                return;
+            }
+        }
+        
+        var formData = new FormData(this);
+        
+        // Debug: Mostrar datos que se enviarán
+        console.log('Datos del formulario:');
+        for (var pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
+        
+        Swal.fire({
+            title: '¿Confirmar asignación?',
+            text: "Se asignarán los leads seleccionados al responsable",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, asignar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: 'acciones/asignacion_leads/procesar_asignacion.php',
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    dataType: 'json',
+                    beforeSend: function() {
+                        Swal.fire({
+                            title: 'Procesando...',
+                            text: 'Asignando leads',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+                    },
+                    success: function(response) {
+                        console.log('Respuesta del servidor:', response);
+                        
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Éxito!',
+                                html: response.message + '<br><small>Leads asignados: ' + response.cantidad + '</small>',
+                                confirmButtonText: 'Aceptar'
+                            }).then(() => {
+                                $('#modalAsignarLead').modal('hide');
+                                $('#formAsignarLead')[0].reset();
+                                if (typeof tabla !== 'undefined') {
+                                    tabla.ajax.reload();
+                                } else {
+                                    location.reload();
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message,
+                                confirmButtonText: 'Aceptar'
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error AJAX:', xhr.responseText);
+                        
+                        var errorMsg = 'No se pudo procesar la asignación';
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            errorMsg = response.message || errorMsg;
+                        } catch(e) {
+                            errorMsg = xhr.responseText || errorMsg;
+                        }
+                        
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error del servidor',
+                            text: errorMsg,
+                            confirmButtonText: 'Aceptar'
+                        });
+                    }
+                });
+            }
+        });
+    });
+
     // Vista previa de asignación
     $('#btn_preview_asignacion').click(function() {
         var tipo = $('#tipo_asignacion').val();
         var usuarioId = $('#asignar_usuario_id').val();
         var prioridad = $('#prioridad_filtro').val();
-        var previewDiv = $('#previewContent');
 
         if (!tipo) {
-            alert('Por favor selecciona un tipo de asignación');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Atención',
+                text: 'Por favor selecciona un tipo de asignación'
+            });
             return;
         }
 
-        // Armar parámetros según el tipo de asignación
         var params = {
             tipo: tipo,
             usuario_id: usuarioId,
@@ -257,9 +402,25 @@ $(document).ready(function() {
 
         if (tipo === 'individual') {
             params.lead_id = $('#lead_individual').val();
+            if (!params.lead_id) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Atención',
+                    text: 'Por favor selecciona un lead'
+                });
+                return;
+            }
         } else if (tipo === 'multiple') {
             params.leads_ids = $('#leads_multiple').val();
             params.cantidad_maxima = $('#cantidad_maxima').val();
+            if (!params.leads_ids || params.leads_ids.length === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Atención',
+                    text: 'Por favor selecciona al menos un lead'
+                });
+                return;
+            }
         } else if (tipo === 'por_criterio') {
             params.canal_id = $('#canal_filtro').val();
             params.estado_id = $('#estado_filtro').val();
@@ -269,54 +430,101 @@ $(document).ready(function() {
             params.fecha_hasta = $('#fecha_hasta').val();
         }
 
-        // Llamar al backend para obtener los leads que cumplen el criterio
         $.ajax({
             url: 'acciones/asignacion_leads/preview_asignacion.php',
             method: 'POST',
             data: params,
             dataType: 'json',
+            beforeSend: function() {
+                Swal.fire({
+                    title: 'Cargando...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            },
             success: function(response) {
+                Swal.close();
+                
                 if (response.success) {
                     if (response.data.length > 0) {
                         var tabla = `
-                            <table class="table table-striped table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Nombre</th>
-                                        <th>Estado</th>
-                                        <th>Prioridad</th>
-                                        <th>Canal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                            <div class="alert alert-info mb-3">
+                                <strong>Total de leads a asignar: ${response.data.length}</strong>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-bordered table-sm">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Nombre</th>
+                                            <th>Email</th>
+                                            <th>Estado</th>
+                                            <th>Prioridad</th>
+                                            <th>Canal</th>
+                                            <th>Fecha Creación</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
                         `;
                         response.data.forEach(function(lead) {
+                            var badgePrioridad = '';
+                            switch(lead.prioridad) {
+                                case 'urgente':
+                                    badgePrioridad = '<span class="badge bg-danger">Urgente</span>';
+                                    break;
+                                case 'alta':
+                                    badgePrioridad = '<span class="badge bg-warning">Alta</span>';
+                                    break;
+                                case 'media':
+                                    badgePrioridad = '<span class="badge bg-info">Media</span>';
+                                    break;
+                                case 'baja':
+                                    badgePrioridad = '<span class="badge bg-secondary">Baja</span>';
+                                    break;
+                                default:
+                                    badgePrioridad = '-';
+                            }
+                            
                             tabla += `
                                 <tr>
                                     <td>${lead.id}</td>
                                     <td>${lead.nombre}</td>
-                                    <td>${lead.estado}</td>
-                                    <td>${lead.prioridad || '-'}</td>
+                                    <td>${lead.email || '-'}</td>
+                                    <td><span class="badge bg-primary">${lead.estado}</span></td>
+                                    <td>${badgePrioridad}</td>
                                     <td>${lead.canal || '-'}</td>
+                                    <td>${lead.fecha_creacion || '-'}</td>
                                 </tr>
                             `;
                         });
-                        tabla += '</tbody></table>';
-                        previewDiv.html(tabla);
+                        tabla += '</tbody></table></div>';
+                        $('#previewContent').html(tabla);
+                        $('#modalPreviewAsignacion').modal('show');
                     } else {
-                        previewDiv.html('<div class="alert alert-warning">No se encontraron leads para asignar con los criterios seleccionados.</div>');
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Sin resultados',
+                            text: 'No se encontraron leads para asignar con los criterios seleccionados'
+                        });
                     }
                 } else {
-                    previewDiv.html('<div class="alert alert-danger">Error: ' + response.message + '</div>');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message
+                    });
                 }
-
-                // Mostrar modal
-                $('#modalPreviewAsignacion').modal('show');
             },
-            error: function() {
-                previewDiv.html('<div class="alert alert-danger">Error al obtener la vista previa.</div>');
-                $('#modalPreviewAsignacion').modal('show');
+            error: function(xhr) {
+                Swal.close();
+                console.error('Error:', xhr.responseText);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudo obtener la vista previa'
+                });
             }
         });
     });
@@ -346,8 +554,15 @@ $(document).ready(function() {
                     }
                 }
             },
-            error: function() {
-                alert('Error al cargar leads sin asignar.');
+           error: function(xhr, status, error) { // <-- Añade 'xhr'
+            console.error('Error AJAX:', xhr.responseText); // <-- Añade esto para ver en consola
+            Swal.fire({
+            icon: 'error',
+            title: 'Error Fatal del Servidor',
+            // Intenta mostrar el error real de PHP
+            text: 'No se pudieron cargar los leads. Revisa la consola (F12) para ver el error de PHP.',
+            footer: xhr.responseText // <-- Muestra el error
+            });
             }
         });
     }

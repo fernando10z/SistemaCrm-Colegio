@@ -27,7 +27,7 @@
                 <li class="pc-item"><a class="pc-link" href="clasificacion_leads.php">Clasificación de Leads</a></li>
                 <li class="pc-item"><a class="pc-link" href="asignacion_leads.php">Asignación</a></li>
                 <li class="pc-item"><a class="pc-link" href="agenda_leads.php">Agenda</a></li>
-                <li class="pc-item"><a class="pc-link" href="reportes_conversion.php">Reportes de Conversión</a></li>
+                <!-- <li class="pc-item"><a class="pc-link" href="reportes_conversion.php">Reportes de Conversión</a></li> -->
                 </ul>
             </li>
 
@@ -170,7 +170,7 @@
                     <li class="pc-item"><a class="pc-link" href="features.php">Features</a></li>
                     <li class="pc-item"><a class="pc-link" href="cursos.php">Cursos</a></li>
                     <li class="pc-item"><a class="pc-link" href="tabs.php">Tablas</a></li>
-                    <li class="pc-item"><a class="pc-link" href="presentacion.php">Presentación</a></li>
+                    <!-- <li class="pc-item"><a class="pc-link" href="presentacion.php">Presentación</a></li> -->
                     <li class="pc-item"><a class="pc-link" href="promociones.php">Promociones</a></li>
                 </ul>
             </li>

@@ -1,85 +1,85 @@
 <?php
-// Incluir conexión a la base de datos
-include 'bd/conexion.php';
+  // Incluir conexión a la base de datos
+  include 'bd/conexion.php';
 
-// Consulta para obtener los leads con información de tablas relacionadas
-$sql = "SELECT 
-    l.id,
-    l.codigo_lead,
-    l.nombres_estudiante,
-    l.apellidos_estudiante,
-    l.fecha_nacimiento_estudiante,
-    l.genero_estudiante,
-    l.nombres_contacto,
-    l.apellidos_contacto,
-    l.telefono,
-    l.whatsapp,
-    l.email,
-    l.colegio_procedencia,
-    l.motivo_cambio,
-    l.observaciones,
-    l.canal_captacion_id,
-    cc.nombre as canal_captacion,
-    cc.tipo as canal_tipo,
-    l.grado_interes_id,
-    g.nombre as grado_nombre,
-    ne.nombre as nivel_nombre,
-    l.estado_lead_id,
-    el.nombre as estado_lead,
-    el.color as color_estado,
-    el.descripcion as estado_descripcion,
-    l.responsable_id,
-    CONCAT(u.nombre, ' ', u.apellidos) as responsable_nombre,
-    l.prioridad,
-    l.puntaje_interes,
-    l.fecha_conversion,
-    l.fecha_ultima_interaccion,
-    l.proxima_accion_fecha,
-    l.proxima_accion_descripcion,
-    l.utm_source,
-    l.utm_medium,
-    l.utm_campaign,
-    l.ip_origen,
-    l.activo,
-    l.created_at,
-    l.updated_at,
-    CONCAT(l.nombres_estudiante, ' ', l.apellidos_estudiante) as nombre_estudiante_completo,
-    CONCAT(l.nombres_contacto, ' ', l.apellidos_contacto) as nombre_contacto_completo
-FROM leads l
-LEFT JOIN canales_captacion cc ON l.canal_captacion_id = cc.id
-LEFT JOIN grados g ON l.grado_interes_id = g.id
-LEFT JOIN niveles_educativos ne ON g.nivel_educativo_id = ne.id
-LEFT JOIN estados_lead el ON l.estado_lead_id = el.id
-LEFT JOIN usuarios u ON l.responsable_id = u.id
-WHERE l.activo = 1
-ORDER BY l.created_at DESC";
+  // Consulta para obtener los leads con información de tablas relacionadas
+  $sql = "SELECT 
+      l.id,
+      l.codigo_lead,
+      l.nombres_estudiante,
+      l.apellidos_estudiante,
+      l.fecha_nacimiento_estudiante,
+      l.genero_estudiante,
+      l.nombres_contacto,
+      l.apellidos_contacto,
+      l.telefono,
+      l.whatsapp,
+      l.email,
+      l.colegio_procedencia,
+      l.motivo_cambio,
+      l.observaciones,
+      l.canal_captacion_id,
+      cc.nombre as canal_captacion,
+      cc.tipo as canal_tipo,
+      l.grado_interes_id,
+      g.nombre as grado_nombre,
+      ne.nombre as nivel_nombre,
+      l.estado_lead_id,
+      el.nombre as estado_lead,
+      el.color as color_estado,
+      el.descripcion as estado_descripcion,
+      l.responsable_id,
+      CONCAT(u.nombre, ' ', u.apellidos) as responsable_nombre,
+      l.prioridad,
+      l.puntaje_interes,
+      l.fecha_conversion,
+      l.fecha_ultima_interaccion,
+      l.proxima_accion_fecha,
+      l.proxima_accion_descripcion,
+      l.utm_source,
+      l.utm_medium,
+      l.utm_campaign,
+      l.ip_origen,
+      l.activo,
+      l.created_at,
+      l.updated_at,
+      CONCAT(l.nombres_estudiante, ' ', l.apellidos_estudiante) as nombre_estudiante_completo,
+      CONCAT(l.nombres_contacto, ' ', l.apellidos_contacto) as nombre_contacto_completo
+  FROM leads l
+  LEFT JOIN canales_captacion cc ON l.canal_captacion_id = cc.id
+  LEFT JOIN grados g ON l.grado_interes_id = g.id
+  LEFT JOIN niveles_educativos ne ON g.nivel_educativo_id = ne.id
+  LEFT JOIN estados_lead el ON l.estado_lead_id = el.id
+  LEFT JOIN usuarios u ON l.responsable_id = u.id
+  WHERE l.activo = 1
+  ORDER BY l.created_at DESC";
 
-$result = $conn->query($sql);
+  $result = $conn->query($sql);
 
-// Obtener estadísticas de leads para mostrar
-$stats_sql = "SELECT 
-    COUNT(*) as total_leads,
-    COUNT(CASE WHEN el.nombre = 'Nuevo' THEN 1 END) as leads_nuevos,
-    COUNT(CASE WHEN el.nombre = 'Contactado' THEN 1 END) as leads_contactados,
-    COUNT(CASE WHEN el.nombre = 'Interesado' THEN 1 END) as leads_interesados,
-    COUNT(CASE WHEN el.nombre = 'Matriculado' THEN 1 END) as leads_matriculados,
-    COUNT(CASE WHEN l.prioridad = 'urgente' THEN 1 END) as leads_urgentes,
-    COUNT(CASE WHEN l.proxima_accion_fecha = CURDATE() THEN 1 END) as acciones_hoy
-FROM leads l
-LEFT JOIN estados_lead el ON l.estado_lead_id = el.id
-WHERE l.activo = 1";
+  // Obtener estadísticas de leads para mostrar
+  $stats_sql = "SELECT 
+      COUNT(*) as total_leads,
+      COUNT(CASE WHEN el.nombre = 'Nuevo' THEN 1 END) as leads_nuevos,
+      COUNT(CASE WHEN el.nombre = 'Contactado' THEN 1 END) as leads_contactados,
+      COUNT(CASE WHEN el.nombre = 'Interesado' THEN 1 END) as leads_interesados,
+      COUNT(CASE WHEN el.nombre = 'Matriculado' THEN 1 END) as leads_matriculados,
+      COUNT(CASE WHEN l.prioridad = 'urgente' THEN 1 END) as leads_urgentes,
+      COUNT(CASE WHEN l.proxima_accion_fecha = CURDATE() THEN 1 END) as acciones_hoy
+  FROM leads l
+  LEFT JOIN estados_lead el ON l.estado_lead_id = el.id
+  WHERE l.activo = 1";
 
-$stats_result = $conn->query($stats_sql);
-$stats = $stats_result->fetch_assoc();
+  $stats_result = $conn->query($stats_sql);
+  $stats = $stats_result->fetch_assoc();
 
-// Obtener nombre del sistema para el título
-$query_nombre = "SELECT valor FROM configuracion_sistema WHERE clave = 'nombre_institucion' LIMIT 1";
-$result_nombre = $conn->query($query_nombre);
-if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
-  $nombre_sistema = htmlspecialchars($row_nombre['valor']);
-} else {
-  $nombre_sistema = "CRM Escolar";
-}
+  // Obtener nombre del sistema para el título
+  $query_nombre = "SELECT valor FROM configuracion_sistema WHERE clave = 'nombre_institucion' LIMIT 1";
+  $result_nombre = $conn->query($query_nombre);
+  if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
+    $nombre_sistema = htmlspecialchars($row_nombre['valor']);
+  } else {
+    $nombre_sistema = "CRM Escolar";
+  }
 ?>
 
 <!DOCTYPE html>
@@ -383,10 +383,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   </small>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                  <button type="button" class="btn btn-outline-warning btn-sm" onclick="validarDuplicados()">
-                    <i class="ti ti-search me-1"></i>
-                    Validar Duplicados
-                  </button>
                   <button type="button" class="btn btn-outline-danger btn-sm" onclick="exportarLeadsPDF()">
                     <i class="fas fa-file-pdf me-1"></i>
                     Generar PDF
@@ -533,13 +529,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                                                 data-email='" . htmlspecialchars($row['email'] ?? '') . "'
                                                 title='Registrar Contacto'>
                                           <i class='ti ti-phone'></i>
-                                        </button>
-                                        <button type='button' class='btn btn-outline-warning btn-duplicados' 
-                                                data-id='" . $row['id'] . "'
-                                                data-email='" . htmlspecialchars($row['email'] ?? '') . "'
-                                                data-telefono='" . htmlspecialchars($row['telefono'] ?? '') . "'
-                                                title='Verificar Duplicados'>
-                                          <i class='ti ti-copy'></i>
                                         </button>
                                       </div>
                                     </td>";

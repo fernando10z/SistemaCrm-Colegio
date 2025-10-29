@@ -1,4 +1,5 @@
 <?php
+session_start();
 // Incluir conexión a la base de datos
 include 'bd/conexion.php';
 

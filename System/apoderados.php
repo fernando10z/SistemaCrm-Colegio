@@ -473,18 +473,18 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   </small>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                  <button type="button" class="btn btn-outline-info btn-sm" onclick="exportarApoderados()">
-                    <i class="ti ti-file-spreadsheet me-1"></i>
-                    Exportar Excel
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="exportarInteraccionesPDF()">
+                    <i class="ti ti-file-type-pdf me-1"></i>
+                    Generar PDF
                   </button>
-                  <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalVincularEstudiantes">
+                  <!-- <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalVincularEstudiantes">
                     <i class="ti ti-link me-1"></i>
                     Vincular Estudiantes
                   </button>
                   <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalConsultarFicha">
                     <i class="ti ti-id-badge me-1"></i>
                     Consultar Ficha
-                  </button>
+                  </button> -->
                   <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalRegistrarApoderado">
                     <i class="ti ti-user-plus me-1"></i>
                     Registrar Apoderado

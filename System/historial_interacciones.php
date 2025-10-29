@@ -573,23 +573,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
         <?php endif; ?>
         <!-- [ Mensaje del Sistema ] end -->
 
-        <!-- [ Tipos de Interacción Panel ] start -->
-        <?php if(!empty($tipos_stats)): ?>
-        <div class="row mb-3">
-          <div class="col-sm-12">
-            <div class="tipos-panel">
-              <h6 class="mb-3"><i class="ti ti-category me-2"></i>Tipos de Interacciones</h6>
-              <?php foreach($tipos_stats as $tipo): ?>
-              <span class="tipo-item" style="background-color: <?php echo $tipo['color'] ?? '#6c757d'; ?>;">
-                <?php echo htmlspecialchars($tipo['nombre']); ?>: <?php echo $tipo['cantidad']; ?>
-              </span>
-              <?php endforeach; ?>
-            </div>
-          </div>
-        </div>
-        <?php endif; ?>
-        <!-- [ Tipos de Interacción Panel ] end -->
-
         <!-- [ Main Content ] start -->
         <div class="row">          
           <div class="col-sm-12">
@@ -605,7 +588,7 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   </small>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                  <button type="button" class="btn btn-outline-info btn-sm" onclick="consultarHistorial()">
+                  <!-- <button type="button" class="btn btn-outline-info btn-sm" onclick="consultarHistorial()">
                     <i class="ti ti-history me-1"></i>
                     Consultar Historial
                   </button>
@@ -616,6 +599,10 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalProgramarInteraccion">
                     <i class="ti ti-calendar-plus me-1"></i>
                     Programar Interacción
+                  </button> -->
+                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="exportarInteraccionesPDF()">
+                    <i class="ti ti-file-type-pdf me-1"></i>
+                    Generar PDF
                   </button>
                   <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalRegistrarInteraccion">
                     <i class="ti ti-plus me-1"></i>

@@ -395,47 +395,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
         </div>
         <!-- [ breadcrumb ] end -->
 
-        <!-- [ Alertas y Próximos Eventos ] start -->
-        <div class="row mb-3">
-          <div class="col-md-8">
-            <div class="alertas-panel">
-              <h6 class="mb-3"><i class="ti ti-calendar-event me-2"></i>Próximos Eventos Programados</h6>
-              <?php 
-              if ($eventos_result->num_rows > 0) {
-                while($evento = $eventos_result->fetch_assoc()) {
-                  echo "<div class='evento-proximo'>
-                          <div class='evento-titulo'>" . htmlspecialchars($evento['titulo']) . "</div>
-                          <div class='evento-fecha'>" . date('d/m/Y H:i', strtotime($evento['fecha_inicio'])) . " - " . ucfirst($evento['tipo']) . " (" . ucfirst($evento['dirigido_a']) . ")</div>
-                        </div>";
-                }
-              } else {
-                echo "<div class='text-muted text-center'>No hay eventos próximos programados</div>";
-              }
-              ?>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="alertas-panel">
-              <h6 class="mb-3"><i class="ti ti-gift me-2"></i>Cumpleaños del Mes</h6>
-              <div class="alerta-item">
-                <i class="ti ti-calendar text-primary"></i>
-                <div>
-                  <div class="stat-principal"><?php echo $cumpleanos_stats['cumpleanos_mes_actual'] ?? 0; ?> cumpleaños</div>
-                  <div class="stat-secundario">Este mes</div>
-                </div>
-              </div>
-              <div class="alerta-item">
-                <i class="ti ti-cake text-warning"></i>
-                <div>
-                  <div class="stat-principal"><?php echo $cumpleanos_stats['cumpleanos_hoy'] ?? 0; ?> cumpleaños</div>
-                  <div class="stat-secundario">Hoy</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- [ Alertas y Próximos Eventos ] end -->
-
         <!-- [ Main Content ] start -->
         <div class="row">          
           <div class="col-sm-12">
@@ -451,7 +410,7 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   </small>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                  <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalDisparadores">
+                  <!-- <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalDisparadores">
                     <i class="ti ti-bolt me-1"></i>
                     Disparadores
                   </button>
@@ -462,6 +421,10 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   <button type="button" class="btn btn-outline-info btn-sm" onclick="gestionarProgramaciones()">
                     <i class="ti ti-settings me-1"></i>
                     Gestionar Programaciones
+                  </button> -->
+                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="exportarInteraccionesPDF()">
+                    <i class="ti ti-file-type-pdf me-1"></i>
+                    Generar PDF
                   </button>
                   <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalCrearPlantilla">
                     <i class="ti ti-template me-1"></i>
@@ -558,12 +521,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                                                 title='Editar Plantilla'>
                                           <i class='ti ti-edit'></i>
                                         </button>
-                                        <button type='button' class='btn btn-outline-success btn-programar-plantilla' 
-                                                data-id='" . $row['id'] . "'
-                                                data-nombre='" . htmlspecialchars($row['nombre']) . "'
-                                                title='Programar Recurrente'>
-                                          <i class='ti ti-calendar-plus'></i>
-                                        </button>
                                         <button type='button' class='btn btn-outline-" . ($row['activo'] ? 'warning' : 'success') . " btn-toggle-estado' 
                                                 data-id='" . $row['id'] . "'
                                                 data-estado='" . $row['activo'] . "'
@@ -604,11 +561,17 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
       </div>
     </section>
 
+    <!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
     <!-- Incluir Modales -->
     <?php include 'modals/mensajeria/modal_crear_plantilla.php'; ?>
     <?php include 'modals/mensajeria/modal_programar_recurrente.php'; ?>
     <?php include 'modals/mensajeria/modal_configurar_disparadores.php'; ?>
     <?php include 'modals/mensajeria/modal_gestionar_programaciones.php'; ?>
+    <?php include 'modals/mensajeria/modal_ver_plantilla.php'; ?>
 
     <?php include 'includes/footer.php'; ?>
     
@@ -636,129 +599,128 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
     <script src="assets/js/plugins/jquery.dataTables.min.js"></script>
     <script src="assets/js/plugins/dataTables.bootstrap5.min.js"></script>
     
+    
     <script>
       $(document).ready(function() {
-            // Inicializar DataTable con filtros integrados
-            var table = $("#plantillas-table").DataTable({
-              "language": {
-                "decimal": "",
-                "emptyTable": "No hay plantillas disponibles en la tabla",
-                "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                "infoEmpty": "Mostrando 0 a 0 de 0 registros",
-                "infoFiltered": "(filtrado de _MAX_ registros totales)",
-                "infoPostFix": "",
-                "thousands": ",",
-                "lengthMenu": "Mostrar _MENU_ registros",
-                "loadingRecords": "Cargando...",
-                "processing": "Procesando...",
-                "search": "Buscar:",
-                "zeroRecords": "No se encontraron registros coincidentes",
-                "paginate": {
-                  "first": "Primero",
-                  "last": "Último",
-                  "next": "Siguiente",
-                  "previous": "Anterior"
-                },
-                "aria": {
-                  "sortAscending": ": activar para ordenar la columna ascendente",
-                  "sortDescending": ": activar para ordenar la columna descendente"
-                }
-              },
-              "pageLength": 25,
-              "order": [[ 0, "desc" ]], // Ordenar por ID descendente (más recientes primero)
-              "columnDefs": [
-                { "orderable": false, "targets": 10 } // Deshabilitar ordenación en columna de acciones
-              ],
-              "initComplete": function () {
-                // Configurar filtros después de que la tabla esté completamente inicializada
-                this.api().columns().every(function (index) {
-                  var column = this;
-                  
-                  // Solo aplicar filtros a las primeras 10 columnas (sin acciones)
-                  if (index < 10) {
-                    var title = $(column.header()).text();
-                    var input = $('<input type="text" class="form-control form-control-sm" placeholder="Buscar ' + title + '" />')
-                      .appendTo($(column.footer()).empty())
-                      .on('keyup change clear', function () {
-                        if (column.search() !== this.value) {
-                          column
-                            .search(this.value)
-                            .draw();
-                        }
-                      });
-                  } else {
-                    // Agregar "ACCIONES" en negrita en la columna de acciones
-                    $(column.footer()).html('<strong>Acciones</strong>');
-                  }
-                });
+        // Inicializar DataTable con filtros integrados y orden correcto
+        var table = $("#plantillas-table").DataTable({
+          "language": {
+            "decimal": "",
+            "emptyTable": "No hay plantillas disponibles en la tabla",
+            "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+            "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+            "infoFiltered": "(filtrado de _MAX_ registros totales)",
+            "infoPostFix": "",
+            "thousands": ",",
+            "lengthMenu": "Mostrar _MENU_ registros",
+            "loadingRecords": "Cargando...",
+            "processing": "Procesando...",
+            "search": "Buscar:",
+            "zeroRecords": "No se encontraron registros coincidentes",
+            "paginate": {
+              "first": "Primero",
+              "last": "Último",
+              "next": "Siguiente",
+              "previous": "Anterior"
+            },
+            "aria": {
+              "sortAscending": ": activar para ordenar la columna ascendente",
+              "sortDescending": ": activar para ordenar la columna descendente"
+            }
+          },
+          "pageLength": 25,
+          "order": [[0, "desc"]], // Ordenar por ID descendente (más recientes primero)
+          "columnDefs": [
+            { 
+              "targets": 0, // Columna ID
+              "type": "num", // Definir como numérica
+              "orderable": true 
+            },
+            { 
+              "targets": 10, // Columna acciones
+              "orderable": false 
+            }
+          ],
+          "initComplete": function () {
+            // Configurar filtros después de que la tabla esté completamente inicializada
+            this.api().columns().every(function (index) {
+              var column = this;
+              
+              // Solo aplicar filtros a las primeras 10 columnas (sin acciones)
+              if (index < 10) {
+                var title = $(column.header()).text();
+                var input = $('<input type="text" class="form-control form-control-sm" placeholder="Buscar ' + title + '" />')
+                  .appendTo($(column.footer()).empty())
+                  .on('keyup change clear', function () {
+                    if (column.search() !== this.value) {
+                      column
+                        .search(this.value)
+                        .draw();
+                    }
+                  });
+              } else {
+                // Agregar "ACCIONES" en negrita en la columna de acciones
+                $(column.footer()).html('<strong>Acciones</strong>');
               }
             });
+          }
+        });
 
-            // Función para gestionar programaciones
-            window.gestionarProgramaciones = function() {
-              $('#modalGestionarProgramaciones').modal('show');
-            };
+        // Función para gestionar programaciones
+        window.gestionarProgramaciones = function() {
+          $('#modalGestionarProgramaciones').modal('show');
+        };
 
-            // Manejar click en botón ver plantilla
-            $(document).on('click', '.btn-ver-plantilla', function() {
-                var id = $(this).data('id');
-                cargarDetallesPlantilla(id, 'ver');
-            });
+        // Manejar click en botón ver plantilla
+        $(document).on('click', '.btn-ver-plantilla', function() {
+          var id = $(this).data('id');
+          cargarDetallesPlantilla(id, 'ver');
+        });
 
-            // Manejar click en botón editar plantilla
-            $(document).on('click', '.btn-editar-plantilla', function() {
-                var id = $(this).data('id');
-                cargarDetallesPlantilla(id, 'editar');
-            });
+        // Manejar click en botón editar plantilla
+        $(document).on('click', '.btn-editar-plantilla', function() {
+          var id = $(this).data('id');
+          cargarDetallesPlantilla(id, 'editar');
+        });
 
-            // Manejar click en botón programar plantilla
-            $(document).on('click', '.btn-programar-plantilla', function() {
-                var id = $(this).data('id');
-                var nombre = $(this).data('nombre');
-                
-                $('#programar_plantilla_id').val(id);
-                $('#programar_plantilla_nombre').text(nombre);
-                $('#modalProgramar').modal('show');
-            });
+        // Manejar click en botón programar plantilla
+        $(document).on('click', '.btn-programar-plantilla', function() {
+          var id = $(this).data('id');
+          var nombre = $(this).data('nombre');
+          
+          $('#programar_plantilla_id').val(id);
+          $('#programar_plantilla_nombre').text(nombre);
+          $('#modalProgramar').modal('show');
+        });
 
-            // Manejar click en botón toggle estado
-            $(document).on('click', '.btn-toggle-estado', function() {
-                var id = $(this).data('id');
-                var estadoActual = $(this).data('estado');
-                var nuevoEstado = estadoActual == 1 ? 0 : 1;
-                var accion = nuevoEstado == 1 ? 'activar' : 'desactivar';
-                
-                if (confirm('¿Está seguro de que desea ' + accion + ' esta plantilla?')) {
-                    toggleEstadoPlantilla(id, nuevoEstado);
-                }
-            });
-
-            // Función para cargar detalles de plantilla
-            function cargarDetallesPlantilla(id, accion) {
-              $.ajax({
-                url: 'actions/obtener_plantilla_detalle.php',
-                method: 'POST',
-                data: { id: id, accion: accion },
-                dataType: 'json',
-                success: function(response) {
-                  if (response.success) {
-                    if (accion === 'ver') {
-                      mostrarDetallesPlantilla(response.data);
-                    } else if (accion === 'editar') {
-                      cargarFormularioEdicion(response.data);
-                    }
-                  } else {
-                    alert('Error al cargar los detalles: ' + response.message);
-                  }
-                },
-                error: function() {
-                  alert('Error de conexión al obtener los detalles de la plantilla.');
-                }
-              });
+        // ============================================
+        // MANEJAR TOGGLE ESTADO - SIN CONFIRM()
+        // ============================================
+        $(document).on('click', '.btn-toggle-estado', function() {
+          var id = $(this).data('id');
+          var estadoActual = $(this).data('estado');
+          var nuevoEstado = estadoActual == 1 ? 0 : 1;
+          var textoAccion = nuevoEstado == 1 ? 'activar' : 'desactivar';
+          
+          // DIRECTAMENTE MOSTRAR SWEETALERT (SIN CONFIRM)
+          Swal.fire({
+            title: '¿Estás seguro?',
+            text: '¿Deseas ' + textoAccion + ' esta plantilla?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, ' + textoAccion,
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#a29bfe',
+            cancelButtonColor: '#b0bec5',
+            background: '#fef9ff',
+            customClass: {
+              popup: 'swal-pastel',
+              confirmButton: 'swal-btn-pastel',
+              cancelButton: 'swal-btn-pastel'
             }
-
-            // Función para toggle estado de plantilla
-            function toggleEstadoPlantilla(id, nuevoEstado) {
+          }).then((result) => {
+            if (result.isConfirmed) {
+              // Ejecutar cambio de estado
               $.ajax({
                 url: 'actions/toggle_estado_plantilla.php',
                 method: 'POST',
@@ -766,61 +728,165 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                 dataType: 'json',
                 success: function(response) {
                   if (response.success) {
-                    alert('Estado de la plantilla actualizado correctamente.');
-                    location.reload();
+                    Swal.fire({
+                      icon: 'success',
+                      title: '¡Actualizado!',
+                      text: 'Estado de la plantilla actualizado correctamente',
+                      confirmButtonText: 'Aceptar',
+                      confirmButtonColor: '#a29bfe',
+                      background: '#fef9ff',
+                      iconColor: '#81c784',
+                      timer: 2000,
+                      timerProgressBar: true,
+                      customClass: {
+                        popup: 'swal-pastel',
+                        confirmButton: 'swal-btn-pastel'
+                      }
+                    }).then(() => {
+                      location.reload();
+                    });
                   } else {
-                    alert('Error al actualizar el estado: ' + response.message);
-                  }
-                },
-                error: function() {
-                  alert('Error de conexión al actualizar el estado.');
-                }
-              });
-            }
-
-            // Función para mostrar detalles de plantilla
-            function mostrarDetallesPlantilla(data) {
-              // Implementar modal de vista de plantilla
-              console.log('Detalles de plantilla:', data);
-            }
-
-            // Función para cargar formulario de edición
-            function cargarFormularioEdicion(data) {
-              // Implementar carga de datos en formulario de edición
-              console.log('Editar plantilla:', data);
-            }
-
-            // Auto-refresh cada 60 segundos para estadísticas
-            setInterval(function() {
-              // Actualizar solo las estadísticas sin recargar la tabla completa
-              actualizarEstadisticas();
-            }, 60000);
-
-            // Función para actualizar estadísticas
-            function actualizarEstadisticas() {
-              $.ajax({
-                url: 'actions/obtener_estadisticas_plantillas.php',
-                method: 'GET',
-                dataType: 'json',
-                success: function(response) {
-                  if (response.success) {
-                    // Actualizar los números en las tarjetas de estadísticas
-                    $('.stats-card .stat-number').each(function(index) {
-                      var keys = ['total_plantillas', 'plantillas_activas', 'plantillas_cumpleanos', 'plantillas_eventos', 'cumpleanos_hoy', 'eventos_proximos'];
-                      if (keys[index] && response.data[keys[index]] !== undefined) {
-                        $(this).text(response.data[keys[index]]);
+                    Swal.fire({
+                      icon: 'error',
+                      title: 'Error',
+                      text: response.message,
+                      confirmButtonText: 'Entendido',
+                      confirmButtonColor: '#f48fb1',
+                      background: '#fff5f8',
+                      iconColor: '#ef5350',
+                      customClass: {
+                        popup: 'swal-pastel',
+                        confirmButton: 'swal-btn-pastel'
                       }
                     });
                   }
                 },
                 error: function() {
-                  console.log('Error al actualizar estadísticas');
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Error de Conexión',
+                    text: 'No se pudo actualizar el estado',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#f48fb1',
+                    background: '#fff5f8',
+                    iconColor: '#ef5350',
+                    customClass: {
+                      popup: 'swal-pastel',
+                      confirmButton: 'swal-btn-pastel'
+                    }
+                  });
                 }
               });
             }
+          });
+        });
 
-            // Tooltip para elementos
-            $('[title]').tooltip();
+        // Función para cargar detalles de plantilla
+        function cargarDetallesPlantilla(id, accion) {
+          $.ajax({
+            url: 'actions/obtener_plantilla_detalle.php',
+            method: 'POST',
+            data: { id: id, accion: accion },
+            dataType: 'json',
+            beforeSend: function() {
+              Swal.fire({
+                title: 'Cargando...',
+                text: 'Obteniendo datos de la plantilla',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                background: '#fef9ff',
+                didOpen: () => {
+                  Swal.showLoading();
+                }
+              });
+            },
+            success: function(response) {
+              Swal.close();
+              
+              if (response.success) {
+                if (accion === 'ver') {
+                  cargarModalVerPlantilla(response.data);
+                  $('#modalVerPlantilla').modal('show');
+                } else if (accion === 'editar') {
+                  cargarModalEditarPlantilla(response.data);
+                }
+              } else {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Error',
+                  text: response.message,
+                  confirmButtonText: 'Entendido',
+                  confirmButtonColor: '#f48fb1',
+                  background: '#fff5f8',
+                  iconColor: '#ef5350',
+                  customClass: {
+                    popup: 'swal-pastel',
+                    confirmButton: 'swal-btn-pastel'
+                  }
+                });
+              }
+            },
+            error: function() {
+              Swal.fire({
+                icon: 'error',
+                title: 'Error de Conexión',
+                text: 'No se pudo obtener los detalles de la plantilla',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#f48fb1',
+                background: '#fff5f8',
+                iconColor: '#ef5350',
+                customClass: {
+                  popup: 'swal-pastel',
+                  confirmButton: 'swal-btn-pastel'
+                }
+              });
+            }
+          });
+        }
+
+        // Función para mostrar detalles de plantilla
+        function mostrarDetallesPlantilla(data) {
+          // Implementar modal de vista de plantilla
+          console.log('Detalles de plantilla:', data);
+        }
+
+        // Función para cargar formulario de edición
+        function cargarFormularioEdicion(data) {
+          // Implementar carga de datos en formulario de edición
+          console.log('Editar plantilla:', data);
+        }
+
+        // Auto-refresh cada 60 segundos para estadísticas
+        setInterval(function() {
+          // Actualizar solo las estadísticas sin recargar la tabla completa
+          actualizarEstadisticas();
+        }, 60000);
+
+        // Función para actualizar estadísticas
+        function actualizarEstadisticas() {
+          $.ajax({
+            url: 'actions/obtener_estadisticas_plantillas.php',
+            method: 'GET',
+            dataType: 'json',
+            success: function(response) {
+              if (response.success) {
+                // Actualizar los números en las tarjetas de estadísticas
+                $('.stats-card .stat-number').each(function(index) {
+                  var keys = ['total_plantillas', 'plantillas_activas', 'plantillas_cumpleanos', 'plantillas_eventos', 'cumpleanos_hoy', 'eventos_proximos'];
+                  if (keys[index] && response.data[keys[index]] !== undefined) {
+                    $(this).text(response.data[keys[index]]);
+                  }
+                });
+              }
+            },
+            error: function() {
+              console.log('Error al actualizar estadísticas');
+            }
+          });
+        }
+
+        // Tooltip para elementos
+        $('[title]').tooltip();
       });
     </script>
     <!-- [Page Specific JS] end -->

@@ -353,6 +353,8 @@
 }
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
 $(document).ready(function() {
     // Variables globales
@@ -377,7 +379,7 @@ $(document).ready(function() {
         }
     });
 
-    // Actualizar vista previa de estrellas cuando cambia el valor
+    // Actualizar vista previa de estrellas
     $('#valor_fijo_range, #valor_fijo_number').on('input', function() {
         var valor = $(this).val();
         actualizarVistaPrevia(valor);
@@ -386,7 +388,25 @@ $(document).ready(function() {
 
     // Simular resultados
     $('#btn_simular').on('click', function() {
-        actualizarSimulacion();
+        Swal.fire({
+            title: 'Recalculando...',
+            html: 'Por favor espere',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+                actualizarSimulacion();
+                setTimeout(() => {
+                    Swal.close();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Simulación Actualizada',
+                        text: 'Los resultados han sido recalculados',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                }, 800);
+            }
+        });
     });
 
     // Aplicar a leads existentes
@@ -399,9 +419,19 @@ $(document).ready(function() {
         mostrarVistaPrevia();
     });
 
-    // Envío del formulario
+    // Envío del formulario con SweetAlert
     $('#formAsignarInteres').on('submit', function(e) {
         e.preventDefault();
+        
+        Swal.fire({
+            title: 'Guardando Configuración...',
+            html: 'Por favor espere',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
         
         $.ajax({
             url: $(this).attr('action'),
@@ -410,15 +440,33 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    alert('Configuración de interés guardada exitosamente');
-                    $('#modalAsignarInteres').modal('hide');
-                    location.reload();
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Configuración Guardada!',
+                        text: response.message || 'La configuración se guardó exitosamente',
+                        confirmButtonColor: '#28a745',
+                        confirmButtonText: 'Entendido'
+                    }).then(() => {
+                        $('#modalAsignarInteres').modal('hide');
+                        location.reload();
+                    });
                 } else {
-                    alert('Error: ' + response.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al Guardar',
+                        text: response.message,
+                        confirmButtonColor: '#dc3545'
+                    });
                 }
             },
-            error: function() {
-                alert('Error de conexión al guardar la configuración');
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de Conexión',
+                    html: '<p>No se pudo guardar la configuración</p>' +
+                          '<small class="text-muted">Código: ' + xhr.status + '</small>',
+                    confirmButtonColor: '#dc3545'
+                });
             }
         });
     });
@@ -450,7 +498,6 @@ $(document).ready(function() {
         var tipoAsignacion = $('input[name="tipo_asignacion"]:checked').val();
         var configuracion = {};
 
-        // Recopilar configuración según tipo
         switch(tipoAsignacion) {
             case 'valor_fijo':
                 configuracion.valor = $('#valor_fijo_number').val();
@@ -491,60 +538,89 @@ $(document).ready(function() {
 
     function aplicarALeadsExistentes() {
         if (!$('#asignacion_automatica').is(':checked')) {
-            alert('Debe activar la asignación automática primero');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Asignación Desactivada',
+                text: 'Debe activar la asignación automática primero',
+                confirmButtonColor: '#ffc107'
+            });
             return;
         }
 
         var leadsAfectados = $('#sim_leads_afectados').text();
         
-        if (confirm(`¿Está seguro de que desea aplicar esta configuración a ${leadsAfectados} leads existentes? Esta acción no se puede deshacer.`)) {
-            var estadoId = $('#interes_estado_id').val();
-            
-            $.ajax({
-                url: 'acciones/clasificacion_leads/aplicar_interes_masivo.php',
-                method: 'POST',
-                data: $('#formAsignarInteres').serialize() + '&aplicar_existentes=1',
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        alert(`Configuración aplicada exitosamente a ${response.leads_actualizados} leads`);
-                        cargarDatosEstado(estadoId);
-                    } else {
-                        alert('Error: ' + response.message);
+        Swal.fire({
+            title: '¿Aplicar Configuración?',
+            html: `<p>¿Estás seguro de que deseas aplicar esta configuración a <strong>${leadsAfectados} leads</strong> existentes?</p>` +
+                  '<p class="text-warning mb-0"><small><i class="ti ti-alert-triangle"></i> Esta acción modificará el puntaje de interés de todos los leads</small></p>',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#007bff',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, aplicar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Aplicando Configuración...',
+                    html: 'Por favor espere',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
                     }
-                },
-                error: function() {
-                    alert('Error de conexión al aplicar la configuración');
-                }
-            });
-        }
+                });
+                
+                var estadoId = $('#interes_estado_id').val();
+                
+                $.ajax({
+                    url: 'acciones/clasificacion_leads/aplicar_interes_masivo.php',
+                    method: 'POST',
+                    data: $('#formAsignarInteres').serialize() + '&aplicar_existentes=1',
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Aplicado Exitosamente!',
+                                text: `Configuración aplicada a ${response.leads_actualizados} leads`,
+                                confirmButtonColor: '#28a745'
+                            }).then(() => {
+                                cargarDatosEstado(estadoId);
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error al Aplicar',
+                                text: response.message,
+                                confirmButtonColor: '#dc3545'
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error de Conexión',
+                            text: 'No se pudo aplicar la configuración',
+                            confirmButtonColor: '#dc3545'
+                        });
+                    }
+                });
+            }
+        });
     }
 
     function mostrarVistaPrevia() {
         var configuracion = recopilarConfiguracion();
         
-        var html = '<div class="modal fade" id="modalVistaPrevia" tabindex="-1">';
-        html += '<div class="modal-dialog">';
-        html += '<div class="modal-content">';
-        html += '<div class="modal-header">';
-        html += '<h5 class="modal-title">Vista Previa de Configuración</h5>';
-        html += '<button type="button" class="btn-close" data-bs-dismiss="modal"></button>';
-        html += '</div>';
-        html += '<div class="modal-body">';
-        html += '<pre>' + JSON.stringify(configuracion, null, 2) + '</pre>';
-        html += '</div>';
-        html += '<div class="modal-footer">';
-        html += '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>';
-        html += '</div>';
-        html += '</div>';
-        html += '</div>';
-        html += '</div>';
-        
-        $('body').append(html);
-        $('#modalVistaPrevia').modal('show');
-        
-        $('#modalVistaPrevia').on('hidden.bs.modal', function() {
-            $(this).remove();
+        Swal.fire({
+            title: 'Vista Previa de Configuración',
+            html: '<pre style="text-align: left; max-height: 400px; overflow-y: auto;">' + 
+                  JSON.stringify(configuracion, null, 2) + 
+                  '</pre>',
+            width: '600px',
+            confirmButtonColor: '#007bff',
+            confirmButtonText: 'Cerrar'
         });
     }
 
@@ -573,24 +649,26 @@ $(document).ready(function() {
                     datosEstado = response.datos;
                     configuracionActual = response.configuracion;
                     
-                    // Actualizar información del estado
                     $('#interes_total_leads').text(datosEstado.total_leads || 0);
-                    $('#interes_promedio_actual').text(datosEstado.promedio_interes || 0);
+                    $('#interes_promedio_actual').text(parseFloat(datosEstado.promedio_interes || 0).toFixed(1));
                     $('#interes_rango_actual').text(`${datosEstado.minimo || 0} - ${datosEstado.maximo || 0}`);
                     
-                    // Cargar configuración existente
                     if (configuracionActual) {
                         cargarConfiguracion(configuracionActual);
                     }
                     
-                    // Cargar datos en gráficos
-                    cargarGraficoDistribucion(response.distribucion);
                     cargarRecomendaciones(response.recomendaciones);
                     cargarHistorialConfiguraciones(response.historial);
                 }
             },
-            error: function() {
+            error: function(xhr) {
                 console.error('Error al cargar datos del estado');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al Cargar Datos',
+                    text: 'No se pudieron obtener los datos del estado',
+                    confirmButtonColor: '#dc3545'
+                });
             }
         });
     }
@@ -623,15 +701,10 @@ $(document).ready(function() {
         }
         
         $('#solo_primera_vez').prop('checked', config.solo_primera_vez || false);
-        $('#respetar_manual').prop('checked', config.respetar_manual !== false); // por defecto true
+        $('#respetar_manual').prop('checked', config.respetar_manual !== false);
         $('#notificar_cambio').prop('checked', config.notificar_cambio || false);
         
         actualizarSimulacion();
-    }
-
-    function cargarGraficoDistribucion(distribucion) {
-        // Implementar gráfico con Chart.js u otra librería
-        console.log('Cargar gráfico de distribución:', distribucion);
     }
 
     function cargarRecomendaciones(recomendaciones) {
@@ -678,7 +751,7 @@ $(document).ready(function() {
         $('#historial_configuraciones_lista').html(html);
     }
 
-    // Inicializar vista previa con valor por defecto
+    // Inicializar
     actualizarVistaPrevia(50);
 
     // Evento cuando se abre el modal

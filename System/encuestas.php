@@ -531,22 +531,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
         </div>
         <?php endif; ?>
 
-        <?php if(!empty($tipos_stats)): ?>
-        <div class="row mb-3">
-          <div class="col-sm-12">
-            <div class="tipos-panel">
-              <h6 class="mb-3"><i class="ti ti-chart-pie me-2"></i>Tipos de Encuestas</h6>
-              <?php foreach($tipos_stats as $tipo): ?>
-              <span class="tipo-item tipo-<?php echo $tipo['tipo']; ?>">
-                <span><?php echo ucfirst($tipo['tipo']); ?></span>
-                <span><?php echo $tipo['cantidad']; ?> (<?php echo $tipo['activas']; ?> activas)</span>
-              </span>
-              <?php endforeach; ?>
-            </div>
-          </div>
-        </div>
-        <?php endif; ?>
-
         <div class="row">          
           <div class="col-sm-12">
             <div class="card">
@@ -559,7 +543,7 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   </small>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                  <button type="button" class="btn btn-outline-info btn-sm" onclick="analizarResultados()">
+                  <!-- <button type="button" class="btn btn-outline-info btn-sm" onclick="analizarResultados()">
                     <i class="ti ti-chart-line me-1"></i>Analizar Resultados
                   </button>
                   <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalGestionarRespuestas">
@@ -567,6 +551,10 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   </button>
                   <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalEnviarEncuesta">
                     <i class="ti ti-send me-1"></i>Enviar Encuesta
+                  </button> -->
+                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="exportarInteraccionesPDF()">
+                    <i class="ti ti-file-type-pdf me-1"></i>
+                    Generar PDF
                   </button>
                   <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalCrearEncuesta">
                     <i class="ti ti-plus me-1"></i>Crear Encuesta

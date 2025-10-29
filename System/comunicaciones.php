@@ -466,14 +466,14 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   </small>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                  <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#modalEstadoEntrega">
+                  <!-- <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#modalEstadoEntrega">
                     <i class="ti ti-truck me-1"></i>
                     Estado Entrega
                   </button>
                   <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalConsultarContacto">
                     <i class="fas fa-user me-1"></i>
                     Consultar por Contacto
-                  </button>
+                  </button> -->
                   <button type="button" class="btn btn-outline-danger btn-sm" onclick="exportarLogsPDF()">
                     <i class="fas fa-file-pdf me-1"></i>
                     Generar PDF
@@ -715,6 +715,11 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   }
                 });
               }
+            });
+
+            $(document).on('click', '.btn-ver-completo', function() {
+              var mensajeId = $(this).data('id');
+              cargarMensajeCompleto(mensajeId);
             });
 
             // Función para cargar mensaje completo

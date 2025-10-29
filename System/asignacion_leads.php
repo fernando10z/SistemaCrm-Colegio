@@ -1,7 +1,13 @@
 <?php
+SESSION_start();
 // Incluir conexión a la base de datos
 include 'bd/conexion.php';
 
+$usuario_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+// Obtener el nombre del usuario
+$usuario_id_logueado = $_SESSION['usuario_id'];
+$usuario_nombre_logueado = $_SESSION['user_name'];
 // Consulta para obtener usuarios con estadísticas de leads asignados
 $sql = "SELECT 
     u.id,
@@ -350,6 +356,20 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
         margin-bottom: 20px;
       }
     </style>
+    <style>
+        .swal2-container {
+            z-index: 9999999 !important;
+        }
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+        .invalid-feedback {
+            display: block;
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+    </style>
   </head>
   <!-- [Head] end -->
   <!-- [Body] Start -->
@@ -406,14 +426,14 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                 </div>
                 <div class="col-md-4 text-end">
                   <div class="d-flex gap-2 justify-content-end flex-wrap">
-                    <button type="button" class="btn btn-light btn-sm" onclick="distribuirAutomaticamente()">
+                    <!-- <button type="button" class="btn btn-light btn-sm" onclick="distribuirAutomaticamente()">
                       <i class="ti ti-robot me-1"></i>
                       Distribución Automática
-                    </button>
-                    <button type="button" class="btn btn-warning btn-sm" onclick="reasignarMasivo()">
+                    </button> -->
+                    <!-- <button type="button" class="btn btn-warning btn-sm" onclick="abrirModalReasignar()">
                       <i class="ti ti-refresh me-1"></i>
                       Reasignar Masivo
-                    </button>
+                    </button> -->
                   </div>
                 </div>
               </div>
@@ -441,10 +461,12 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                     <i class="ti ti-file-type-pdf me-1"></i>
                     Generar PDF
                   </button>
-                  <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAsignarLead">
+                <button type="button" 
+                        class="btn btn-primary btn-sm" 
+                        onclick="abrirModalAsignar(<?php echo $usuario_id_logueado; ?>, '<?php echo htmlspecialchars($usuario_nombre_logueado); ?>')">
                     <i class="ti ti-user-plus me-1"></i>
-                    Asignar Lead
-                  </button>
+                    Asignar Leads a Mi Cartera
+                </button>
                 </div>
               </div>
               
@@ -586,18 +608,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                                                 title='Consultar Carga'>
                                           <i class='ti ti-chart-bar'></i>
                                         </button>
-                                        <button type='button' class='btn btn-outline-primary btn-asignar-lead' 
-                                                data-id='" . $row['id'] . "'
-                                                data-nombre='" . htmlspecialchars($row['nombre_completo']) . "'
-                                                title='Asignar Lead'>
-                                          <i class='ti ti-user-plus'></i>
-                                        </button>
-                                        <button type='button' class='btn btn-outline-warning btn-reasignar' 
-                                                data-id='" . $row['id'] . "'
-                                                data-nombre='" . htmlspecialchars($row['nombre_completo']) . "'
-                                                title='Reasignar Leads'>
-                                          <i class='ti ti-refresh'></i>
-                                        </button>
                                       </div>
                                     </td>";
                               echo "</tr>";
@@ -631,12 +641,14 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
         <!-- [ Main Content ] end -->
       </div>
     </section>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <!-- Incluir Modales -->
     <?php include 'modals/asignacion_leads/modal_asignar_lead.php'; ?>
     <?php include 'modals/asignacion_leads/modal_consultar_carga.php'; ?>
-    <?php include 'modals/asignacion_leads/modal_reasignar.php'; ?>
     <?php include 'modals/asignacion_leads/modal_distribuir_automatico.php'; ?>
+    <?php include 'modals/asignacion_leads/modal_reasignar.php'; ?>
+
 
     <?php include 'includes/footer.php'; ?>
     
@@ -663,7 +675,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="assets/js/plugins/jquery.dataTables.min.js"></script>
     <script src="assets/js/plugins/dataTables.bootstrap5.min.js"></script>
-    
     <script>
       $(document).ready(function() {
             // Inicializar DataTable

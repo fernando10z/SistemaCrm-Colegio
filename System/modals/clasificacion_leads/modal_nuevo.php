@@ -98,8 +98,10 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
-    
 function updatePreviewBadge() {
     var nombre = $('#modalNuevoEstado input[name="nombre"]').val() || 'Estado Ejemplo';
     var color = $('#modalNuevoEstado input[name="color"]').val();
@@ -107,19 +109,11 @@ function updatePreviewBadge() {
     $('#preview_badge').text(nombre).css('background-color', color);
 }
 
-
 $(document).ready(function() {
     // Actualizar vista previa del badge en tiempo real
     $('#modalNuevoEstado input[name="nombre"], #modalNuevoEstado input[name="color"]').on('input', function() {
         updatePreviewBadge();
     });
-
-    function updatePreviewBadge() {
-        var nombre = $('#modalNuevoEstado input[name="nombre"]').val() || 'Estado Ejemplo';
-        var color = $('#modalNuevoEstado input[name="color"]').val();
-        
-        $('#preview_badge').text(nombre).css('background-color', color);
-    }
 
     // Sincronizar color picker con input hex
     $('#nuevo_color_picker').on('input', function() {
@@ -127,9 +121,20 @@ $(document).ready(function() {
         updatePreviewBadge();
     });
 
-    // Envío del formulario
+    // Envío del formulario con SweetAlert
     $('#formNuevoEstado').on('submit', function(e) {
         e.preventDefault();
+        
+        // Mostrar loading
+        Swal.fire({
+            title: 'Creando Estado...',
+            html: 'Por favor espere',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
         
         $.ajax({
             url: $(this).attr('action'),
@@ -138,15 +143,44 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    alert('Estado creado exitosamente');
-                    $('#modalNuevoEstado').modal('hide');
-                    location.reload();
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Éxito!',
+                        text: response.message || 'Estado creado exitosamente',
+                        confirmButtonColor: '#28a745',
+                        confirmButtonText: 'Entendido'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            $('#modalNuevoEstado').modal('hide');
+                            location.reload();
+                        }
+                    });
                 } else {
-                    alert('Error: ' + response.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message || 'No se pudo crear el estado',
+                        confirmButtonColor: '#dc3545',
+                        confirmButtonText: 'Entendido'
+                    });
                 }
             },
-            error: function() {
-                alert('Error de conexión al crear el estado');
+            error: function(xhr, status, error) {
+                console.error('Error AJAX:', {
+                    status: status,
+                    error: error,
+                    responseText: xhr.responseText
+                });
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de Conexión',
+                    html: '<p>No se pudo comunicar con el servidor</p>' +
+                          '<small class="text-muted">Código: ' + xhr.status + '</small>',
+                    confirmButtonColor: '#dc3545',
+                    confirmButtonText: 'Entendido',
+                    footer: '<small>Por favor, verifica tu conexión e intenta nuevamente</small>'
+                });
             }
         });
     });
@@ -183,4 +217,160 @@ $(document).ready(function() {
     
     $('#nuevo_color_picker').closest('.input-group').after(coloresHtml);
 });
+
+// ====================== FUNCIÓN PARA EDITAR ESTADO ======================
+function editarEstado(id, nombre, descripcion, color, orden, esFinal) {
+    // Cargar datos en el modal de edición (crear este modal si no existe)
+    $('#modalEditarEstado input[name="id"]').val(id);
+    $('#modalEditarEstado input[name="nombre"]').val(nombre);
+    $('#modalEditarEstado textarea[name="descripcion"]').val(descripcion);
+    $('#modalEditarEstado input[name="color"]').val(color);
+    $('#modalEditarEstado input[name="orden_display"]').val(orden);
+    
+    if (esFinal == 1) {
+        $('#modalEditarEstado input[name="es_final"]').prop('checked', true);
+    } else {
+        $('#modalEditarEstado input[name="es_final"]').prop('checked', false);
+    }
+    
+    // Mostrar modal
+    $('#modalEditarEstado').modal('show');
+}
+
+// ====================== FUNCIÓN PARA ELIMINAR ESTADO ======================
+function eliminarEstado(id, nombre) {
+    Swal.fire({
+        title: '¿Eliminar Estado?',
+        html: `<p>¿Estás seguro de que deseas eliminar el estado <strong>"${nombre}"</strong>?</p>` +
+              '<p class="text-danger mb-0"><small>Esta acción no se puede deshacer</small></p>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Eliminando...',
+                html: 'Por favor espere',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            $.ajax({
+                url: 'acciones/clasificacion_leads/procesar_estado.php',
+                method: 'POST',
+                data: {
+                    accion: 'eliminar',
+                    id: id
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Eliminado!',
+                            text: response.message || 'Estado eliminado exitosamente',
+                            confirmButtonColor: '#28a745',
+                            confirmButtonText: 'Entendido'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'No se pudo eliminar',
+                            text: response.message,
+                            confirmButtonColor: '#dc3545',
+                            confirmButtonText: 'Entendido'
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de Conexión',
+                        text: 'No se pudo comunicar con el servidor',
+                        confirmButtonColor: '#dc3545',
+                        confirmButtonText: 'Entendido'
+                    });
+                }
+            });
+        }
+    });
+}
+
+// ====================== FUNCIÓN PARA CAMBIAR ESTADO ACTIVO ======================
+function cambiarEstadoActivo(id, nombre, estadoActual) {
+    const nuevoEstado = estadoActual == 1 ? 0 : 1;
+    const accionTexto = nuevoEstado == 1 ? 'activar' : 'desactivar';
+    
+    Swal.fire({
+        title: `¿${accionTexto.charAt(0).toUpperCase() + accionTexto.slice(1)} Estado?`,
+        html: `¿Deseas ${accionTexto} el estado <strong>"${nombre}"</strong>?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: nuevoEstado == 1 ? '#28a745' : '#ffc107',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: `Sí, ${accionTexto}`,
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Procesando...',
+                html: 'Por favor espere',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            $.ajax({
+                url: 'acciones/clasificacion_leads/procesar_estado.php',
+                method: 'POST',
+                data: {
+                    accion: 'cambiar_estado',
+                    id: id,
+                    activo: nuevoEstado
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Actualizado!',
+                            text: response.message,
+                            confirmButtonColor: '#28a745',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message,
+                            confirmButtonColor: '#dc3545'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de Conexión',
+                        text: 'No se pudo comunicar con el servidor',
+                        confirmButtonColor: '#dc3545'
+                    });
+                }
+            });
+        }
+    });
+}
 </script>

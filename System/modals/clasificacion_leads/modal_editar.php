@@ -87,53 +87,6 @@
                         </div>
                     </div>
 
-                    <!-- Opciones avanzadas -->
-                    <div class="mt-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0">Opciones Avanzadas</h6>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" 
-                                    data-bs-target="#opcionesAvanzadas" aria-expanded="false">
-                                <i class="ti ti-settings"></i>
-                            </button>
-                        </div>
-                        
-                        <div class="collapse mt-2" id="opcionesAvanzadas">
-                            <div class="card bg-light">
-                                <div class="card-body p-3">
-                                    <div class="mb-2">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="edit_notificar_cambios">
-                                            <label class="form-check-label" for="edit_notificar_cambios">
-                                                Notificar cambios a responsables
-                                            </label>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="mb-2">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="edit_requerir_observaciones">
-                                            <label class="form-check-label" for="edit_requerir_observaciones">
-                                                Requerir observaciones al cambiar a este estado
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <label class="form-label small">Tiempo promedio en estado (días)</label>
-                                            <input type="number" class="form-control form-control-sm" 
-                                                   id="edit_tiempo_promedio" min="0" step="0.1">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label small">Puntaje de interés sugerido</label>
-                                            <input type="number" class="form-control form-control-sm" 
-                                                   id="edit_puntaje_sugerido" min="0" max="100">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-danger" id="btn_desactivar_estado">
@@ -165,136 +118,238 @@
         }
     }
 
-
-$(document).ready(function() {
-    // Actualizar vista previa del badge en tiempo real
-    $('#modalEditar input[name="nombre"], #modalEditar input[name="color"]').on('input', function() {
-        updateEditPreviewBadge();
-    });
-
-    // Sincronizar color picker con input hex
-    $('#edit_color_picker').on('input', function() {
-        $('#edit_color_hex').val($(this).val());
-        updateEditPreviewBadge();
-    });
-
-    // Actualizar preview cuando cambia el checkbox de estado final
-    $('#edit_es_final').on('change', function() {
-        updateEditPreviewBadge();
-    });
-
-    // Envío del formulario
-    $('#formEditarEstado').on('submit', function(e) {
-        e.preventDefault();
-        
-        // Validar que el orden no esté duplicado
-        var orden = $('#edit_orden_display').val();
-        var estadoId = $('#edit_estado_id').val();
-        
-        $.ajax({
-            url: $(this).attr('action'),
-            method: 'POST',
-            data: $(this).serialize(),
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    alert('Estado actualizado exitosamente');
-                    $('#modalEditar').modal('hide');
-                    location.reload();
-                } else {
-                    alert('Error: ' + response.message);
-                }
-            },
-            error: function() {
-                alert('Error de conexión al actualizar el estado');
-            }
+    $(document).ready(function() {
+        // Actualizar vista previa del badge en tiempo real
+        $('#modalEditar input[name="nombre"], #modalEditar input[name="color"]').on('input', function() {
+            updateEditPreviewBadge();
         });
-    });
 
-    // Manejar desactivación del estado
-    $('#btn_desactivar_estado').on('click', function() {
-        var estadoId = $('#edit_estado_id').val();
-        var totalLeads = parseInt($('#edit_total_leads').text()) || 0;
-        
-        if (totalLeads > 0) {
-            alert('No se puede desactivar este estado porque tiene ' + totalLeads + ' leads asociados. Mueva los leads a otro estado primero.');
-            return;
-        }
-        
-        if (confirm('¿Está seguro de que desea desactivar este estado? Esta acción no se puede deshacer.')) {
+        // Sincronizar color picker con input hex
+        $('#edit_color_picker').on('input', function() {
+            $('#edit_color_hex').val($(this).val());
+            updateEditPreviewBadge();
+        });
+
+        // Actualizar preview cuando cambia el checkbox de estado final
+        $('#edit_es_final').on('change', function() {
+            updateEditPreviewBadge();
+        });
+
+        // Envío del formulario con SweetAlert
+        $('#formEditarEstado').on('submit', function(e) {
+            e.preventDefault();
+            
+            // Mostrar loading
+            Swal.fire({
+                title: 'Actualizando Estado...',
+                html: 'Por favor espere',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
             $.ajax({
-                url: 'acciones/clasificacion_leads/procesar_estado.php',
+                url: $(this).attr('action'),
                 method: 'POST',
-                data: {
-                    accion: 'desactivar',
-                    id: estadoId
-                },
+                data: $(this).serialize(),
                 dataType: 'json',
                 success: function(response) {
                     if (response.success) {
-                        alert('Estado desactivado exitosamente');
-                        $('#modalEditar').modal('hide');
-                        location.reload();
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Actualizado!',
+                            text: response.message || 'Estado actualizado exitosamente',
+                            confirmButtonColor: '#28a745',
+                            confirmButtonText: 'Entendido'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                $('#modalEditar').modal('hide');
+                                location.reload();
+                            }
+                        });
                     } else {
-                        alert('Error: ' + response.message);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error al Actualizar',
+                            text: response.message || 'No se pudo actualizar el estado',
+                            confirmButtonColor: '#dc3545',
+                            confirmButtonText: 'Entendido'
+                        });
                     }
                 },
-                error: function() {
-                    alert('Error de conexión al desactivar el estado');
+                error: function(xhr, status, error) {
+                    console.error('Error AJAX:', {
+                        status: status,
+                        error: error,
+                        responseText: xhr.responseText
+                    });
+                    
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de Conexión',
+                        html: '<p>No se pudo comunicar con el servidor</p>' +
+                              '<small class="text-muted">Código: ' + xhr.status + '</small>',
+                        confirmButtonColor: '#dc3545',
+                        confirmButtonText: 'Entendido',
+                        footer: '<small>Por favor, verifica tu conexión e intenta nuevamente</small>'
+                    });
                 }
             });
+        });
+
+        // Manejar desactivación del estado con SweetAlert
+        $('#btn_desactivar_estado').on('click', function() {
+            var estadoId = $('#edit_estado_id').val();
+            var nombreEstado = $('#edit_nombre').val();
+            var totalLeads = parseInt($('#edit_total_leads').text()) || 0;
+            
+            // Validar si tiene leads asociados
+            if (totalLeads > 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'No se puede Desactivar',
+                    html: `<p>Este estado tiene <strong>${totalLeads} lead(s)</strong> asociados.</p>` +
+                          '<p class="mb-0"><small>Mueva los leads a otro estado antes de desactivar.</small></p>',
+                    confirmButtonColor: '#ffc107',
+                    confirmButtonText: 'Entendido',
+                    footer: '<small>Sugerencia: Usa la función de reasignación masiva de estados</small>'
+                });
+                return;
+            }
+            
+            // Confirmar desactivación
+            Swal.fire({
+                title: '¿Desactivar Estado?',
+                html: `<p>¿Estás seguro de que deseas desactivar el estado <strong>"${nombreEstado}"</strong>?</p>` +
+                      '<p class="text-warning mb-0"><small><i class="ti ti-alert-triangle"></i> El estado quedará oculto pero no se eliminará</small></p>',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, desactivar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Mostrar loading
+                    Swal.fire({
+                        title: 'Desactivando Estado...',
+                        html: 'Por favor espere',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    $.ajax({
+                        url: 'acciones/clasificacion_leads/procesar_estado.php',
+                        method: 'POST',
+                        data: {
+                            accion: 'desactivar',
+                            id: estadoId
+                        },
+                        dataType: 'json',
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: '¡Desactivado!',
+                                    text: response.message || 'Estado desactivado exitosamente',
+                                    confirmButtonColor: '#28a745',
+                                    confirmButtonText: 'Entendido'
+                                }).then(() => {
+                                    $('#modalEditar').modal('hide');
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error al Desactivar',
+                                    text: response.message || 'No se pudo desactivar el estado',
+                                    confirmButtonColor: '#dc3545',
+                                    confirmButtonText: 'Entendido'
+                                });
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error AJAX:', {
+                                status: status,
+                                error: error,
+                                responseText: xhr.responseText
+                            });
+                            
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error de Conexión',
+                                html: '<p>No se pudo desactivar el estado</p>' +
+                                      '<small class="text-muted">Código: ' + xhr.status + '</small>',
+                                confirmButtonColor: '#dc3545',
+                                confirmButtonText: 'Entendido'
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
+        // Colores predefinidos sugeridos para edición
+        const coloresSugeridos = [
+            { nombre: 'Azul', valor: '#007bff' },
+            { nombre: 'Verde', valor: '#28a745' },
+            { nombre: 'Amarillo', valor: '#ffc107' },
+            { nombre: 'Naranja', valor: '#fd7e14' },
+            { nombre: 'Rojo', valor: '#dc3545' },
+            { nombre: 'Morado', valor: '#6f42c1' },
+            { nombre: 'Celeste', valor: '#17a2b8' },
+            { nombre: 'Gris', valor: '#6c757d' }
+        ];
+
+        // Agregar botones de colores sugeridos
+        var coloresHtml = '<div class="mt-2"><small class="text-muted">Colores sugeridos:</small><br>';
+        coloresSugeridos.forEach(function(color) {
+            coloresHtml += `<button type="button" class="btn btn-sm me-1 mt-1" 
+                                   style="background-color: ${color.valor}; width: 25px; height: 25px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc;"
+                                   onclick="$('#edit_color_picker').val('${color.valor}'); $('#edit_color_hex').val('${color.valor}'); updateEditPreviewBadge();"
+                                   title="${color.nombre}"></button>`;
+        });
+        coloresHtml += '</div>';
+        
+        $('#edit_color_picker').closest('.input-group').after(coloresHtml);
+
+        // Limpiar formulario al cerrar modal
+        $('#modalEditar').on('hidden.bs.modal', function() {
+            $('#formEditarEstado')[0].reset();
+            $('#opcionesAvanzadas').collapse('hide');
+        });
+    });
+
+    // Función para cargar datos en el modal de edición
+    function cargarDatosEstadoEdicion(data) {
+        $('#edit_estado_id').val(data.id);
+        $('#edit_nombre').val(data.nombre);
+        $('#edit_descripcion').val(data.descripcion);
+        $('#edit_color_picker').val(data.color);
+        $('#edit_color_hex').val(data.color);
+        $('#edit_orden_display').val(data.orden_display);
+        $('#edit_es_final').prop('checked', data.es_final == 1);
+        
+        // Cargar información adicional
+        $('#edit_total_leads').text(data.total_leads || 0);
+        $('#edit_fecha_creacion').text(data.fecha_creacion_formateada || '-');
+        $('#edit_ultimo_uso').text(data.ultimo_uso_formateado || '-');
+        $('#edit_estado_activo').text(data.activo == 1 ? 'Activo' : 'Inactivo');
+        
+        // Cargar configuraciones avanzadas si existen
+        if (data.configuraciones) {
+            $('#edit_notificar_cambios').prop('checked', data.configuraciones.notificar_cambios || false);
+            $('#edit_requerir_observaciones').prop('checked', data.configuraciones.requerir_observaciones || false);
+            $('#edit_tiempo_promedio').val(data.configuraciones.tiempo_promedio || '');
+            $('#edit_puntaje_sugerido').val(data.configuraciones.puntaje_sugerido || '');
         }
-    });
-
-    // Colores predefinidos sugeridos para edición
-    const coloresSugeridos = [
-        { nombre: 'Azul', valor: '#007bff' },
-        { nombre: 'Verde', valor: '#28a745' },
-        { nombre: 'Amarillo', valor: '#ffc107' },
-        { nombre: 'Naranja', valor: '#fd7e14' },
-        { nombre: 'Rojo', valor: '#dc3545' },
-        { nombre: 'Morado', valor: '#6f42c1' },
-        { nombre: 'Celeste', valor: '#17a2b8' },
-        { nombre: 'Gris', valor: '#6c757d' }
-    ];
-
-    // Agregar botones de colores sugeridos
-    var coloresHtml = '<div class="mt-2"><small class="text-muted">Colores sugeridos:</small><br>';
-    coloresSugeridos.forEach(function(color) {
-        coloresHtml += `<button type="button" class="btn btn-sm me-1 mt-1" 
-                               style="background-color: ${color.valor}; width: 25px; height: 25px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc;"
-                               onclick="$('#edit_color_picker').val('${color.valor}'); $('#edit_color_hex').val('${color.valor}'); updateEditPreviewBadge();"
-                               title="${color.nombre}"></button>`;
-    });
-    coloresHtml += '</div>';
-    
-    $('#edit_color_picker').closest('.input-group').after(coloresHtml);
-});
-
-// Función para cargar datos en el modal de edición
-function cargarDatosEstadoEdicion(data) {
-    $('#edit_estado_id').val(data.id);
-    $('#edit_nombre').val(data.nombre);
-    $('#edit_descripcion').val(data.descripcion);
-    $('#edit_color_picker').val(data.color);
-    $('#edit_color_hex').val(data.color);
-    $('#edit_orden_display').val(data.orden_display);
-    $('#edit_es_final').prop('checked', data.es_final == 1);
-    
-    // Cargar información adicional
-    $('#edit_total_leads').text(data.total_leads || 0);
-    $('#edit_fecha_creacion').text(data.fecha_creacion_formateada || '-');
-    $('#edit_ultimo_uso').text(data.ultimo_uso_formateado || '-');
-    $('#edit_estado_activo').text(data.activo == 1 ? 'Activo' : 'Inactivo');
-    
-    // Cargar configuraciones avanzadas si existen
-    if (data.configuraciones) {
-        $('#edit_notificar_cambios').prop('checked', data.configuraciones.notificar_cambios || false);
-        $('#edit_requerir_observaciones').prop('checked', data.configuraciones.requerir_observaciones || false);
-        $('#edit_tiempo_promedio').val(data.configuraciones.tiempo_promedio || '');
-        $('#edit_puntaje_sugerido').val(data.configuraciones.puntaje_sugerido || '');
+        
+        updateEditPreviewBadge();
     }
-    
-    updateEditPreviewBadge();
-}
 </script>

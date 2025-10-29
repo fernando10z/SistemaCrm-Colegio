@@ -607,6 +607,9 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
       </div>
     </section>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <!-- Incluir Modales -->
     <?php include 'modals/clasificacion_leads/modal_nuevo.php'; ?>
     <?php include 'modals/clasificacion_leads/modal_editar.php'; ?>
@@ -768,12 +771,7 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                 var id = $(this).data('id');
                 var nombre = $(this).data('nombre');
                 
-                $('#flujo_estado_id').val(id);
-                $('#flujo_estado_nombre').text(nombre);
-                
-                cargarConfiguracionFlujo(id);
-                
-                $('#modalConfigurarFlujo').modal('show');
+                abrirModalFlujo(id, nombre);
             });
 
             // Manejar click en botón asignar nivel de interés

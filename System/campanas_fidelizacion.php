@@ -706,9 +706,13 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   </small>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                  <button type="button" class="btn btn-outline-info btn-sm" onclick="medirImpactoGlobal()">
+                  <!-- <button type="button" class="btn btn-outline-info btn-sm" onclick="medirImpactoGlobal()">
                     <i class="ti ti-chart-bar me-1"></i>
                     Medir Impacto
+                  </button> -->
+                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="exportarInteraccionesPDF()">
+                    <i class="ti ti-file-type-pdf me-1"></i>
+                    Generar PDF
                   </button>
                   <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalOrganizarEvento">
                     <i class="ti ti-calendar-event me-1"></i>

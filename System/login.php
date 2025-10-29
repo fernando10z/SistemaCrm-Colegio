@@ -4,11 +4,17 @@ include 'bd/conexion.php';
     $query_nombre = "SELECT valor FROM configuracion_sistema WHERE id = 1 LIMIT 1";
     $result_nombre = $conn->query($query_nombre);
     if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
-      $nombre_sistema = htmlspecialchars($row_nombre['valor']);
-}
+        $nombre_sistema = htmlspecialchars($row_nombre['valor']);
+    }
 
-// Procesar el formulario de login cuando se envíe
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
+    $query_imagen = "SELECT valor FROM configuracion_sistema WHERE id = 6 LIMIT 1";
+    $result_imagen = $conn->query($query_imagen);
+    if ($result_imagen && $row_imagen = $result_imagen->fetch_assoc()) {
+        $imagen_sistema = htmlspecialchars($row_imagen['valor']);
+    }
+
+    // Procesar el formulario de login cuando se envíe
+    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
     // Incluir la conexión a la base de datos
     include 'bd/conexion.php';
 
@@ -31,7 +37,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
             // Verificar la contraseña (asumiendo que está hasheada con password_hash())
             if (password_verify($password, $row['password_hash'])) {
                 // Iniciar sesión y guardar datos
-                $_SESSION['user_id'] = $row['id'];
+                $_SESSION['usuario_id'] = $row['id'];
                 $_SESSION['user_name'] = $row['nombre'] . ' ' . $row['apellidos'];
                 $_SESSION['user_email'] = $row['email'];
                 $_SESSION['user_username'] = $row['usuario'];
@@ -65,7 +71,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
+        <link rel="icon" type="image/png" href="<?php echo $imagen_sistema; ?>"/>
+
     <!-- SweetAlert2 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     
@@ -495,7 +502,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
         <div class="login-card">
             <div class="logo-section">
                 <div class="logo">
-                    <img src="assets/images/logocoelgio.jpeg" alt="Logo <?php echo $nombre_sistema; ?>">
+                    <img src="<?php echo $imagen_sistema; ?>" alt="Logo <?php echo $nombre_sistema; ?>">
                 </div>
                 <h1 class="school-name"><?php echo $nombre_sistema; ?></h1>
                 <p class="school-subtitle">Sistema de Gestión Académica</p>
@@ -544,11 +551,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
                     </div>
                 </div>
 
-                <div class="form-options">
-                    <div class="checkbox-wrapper">
-                        <input type="checkbox" id="remember" name="remember" class="checkbox">
-                        <label for="remember" class="checkbox-label">Recordarme</label>
-                    </div>
+                <div class="form-options" style="justify-content: center;">
                     <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
                 </div>
 

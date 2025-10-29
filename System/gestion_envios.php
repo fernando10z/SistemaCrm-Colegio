@@ -382,7 +382,7 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   </small>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                  <button type="button" class="btn btn-outline-success btn-sm" onclick="procesarCola()">
+                  <!-- <button type="button" class="btn btn-outline-success btn-sm" onclick="procesarCola()">
                     <i class="ti ti-play me-1"></i>
                     Procesar Cola
                   </button>
@@ -393,6 +393,10 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalDestinatarios">
                     <i class="ti ti-users me-1"></i>
                     Seleccionar Destinatarios
+                  </button> -->
+                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="exportarInteraccionesPDF()">
+                    <i class="ti ti-file-type-pdf me-1"></i>
+                    Generar PDF
                   </button>
                   <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalEnviarMensaje">
                     <i class="ti ti-send me-1"></i>
@@ -526,6 +530,7 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
     <?php include 'modals/gestion_envios/modal_seleccionar_destinatarios.php'; ?>
     <?php include 'modals/gestion_envios/modal_plantillas.php'; ?>
     <?php include 'modals/gestion_envios/modal_procesar_cola.php'; ?>
+    <?php include 'modals/gestion_envios/modal_detalle_mensaje.php'; ?>               
 
     <?php include 'includes/footer.php'; ?>
     
@@ -582,16 +587,14 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                 }
               },
               "pageLength": 25,
-              "order": [[ 0, "desc" ]], // Ordenar por ID descendente (más recientes primero)
+              "order": [[ 0, "desc" ]],
               "columnDefs": [
-                { "orderable": false, "targets": 10 } // Deshabilitar ordenación en columna de acciones
+                { "orderable": false, "targets": 10 }
               ],
               "initComplete": function () {
-                // Configurar filtros después de que la tabla esté completamente inicializada
                 this.api().columns().every(function (index) {
                   var column = this;
                   
-                  // Solo aplicar filtros a las primeras 10 columnas (sin acciones)
                   if (index < 10) {
                     var title = $(column.header()).text();
                     var input = $('<input type="text" class="form-control form-control-sm" placeholder="Buscar ' + title + '" />')
@@ -604,7 +607,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                         }
                       });
                   } else {
-                    // Agregar "ACCIONES" en negrita en la columna de acciones
                     $(column.footer()).html('<strong>Acciones</strong>');
                   }
                 });
@@ -639,7 +641,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                 dataType: 'json',
                 success: function(response) {
                   if (response.success) {
-                    // Mostrar modal con detalles
                     mostrarModalDetalle(response.data);
                   } else {
                     alert('Error al cargar los detalles: ' + response.message);
@@ -674,16 +675,226 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
 
             // Función para mostrar modal de detalle
             function mostrarModalDetalle(data) {
-              // Implementar modal de detalle aquí
-              console.log('Detalle del mensaje:', data);
-            }
+    console.log('Detalle del mensaje:', data);
+    
+    // Construir HTML del contenido
+    let html = '';
+    
+    // Sección: Información General
+    html += `
+    <div class="detalle-seccion">
+      <div class="detalle-titulo">
+        <i class="ti ti-info-circle"></i>
+        Información General
+      </div>
+      <div class="detalle-campo">
+        <span class="detalle-label">ID del Mensaje:</span>
+        <span class="detalle-valor"><strong>#${data.id}</strong></span>
+      </div>
+      <div class="detalle-campo">
+        <span class="detalle-label">Tipo:</span>
+        <span class="detalle-valor">
+          <span class="badge badge-tipo tipo-${data.tipo}">
+            <i class="ti ${data.icono_tipo}"></i> ${data.tipo.toUpperCase()}
+          </span>
+        </span>
+      </div>
+      <div class="detalle-campo">
+        <span class="detalle-label">Estado:</span>
+        <span class="detalle-valor">
+          <span class="badge badge-detalle bg-${data.color_estado}">
+            ${data.estado.charAt(0).toUpperCase() + data.estado.slice(1)}
+          </span>
+        </span>
+      </div>
+      <div class="detalle-campo">
+        <span class="detalle-label">Plantilla:</span>
+        <span class="detalle-valor">${data.plantilla_nombre || '<em>Mensaje manual</em>'}</span>
+      </div>
+      ${data.plantilla_categoria ? `
+      <div class="detalle-campo">
+        <span class="detalle-label">Categoría:</span>
+        <span class="detalle-valor">${data.plantilla_categoria}</span>
+      </div>
+      ` : ''}
+    </div>
+    `;
+    
+    // Sección: Destinatario
+    html += `
+    <div class="detalle-seccion">
+      <div class="detalle-titulo">
+        <i class="ti ti-user"></i>
+        Destinatario
+      </div>
+      <div class="detalle-campo">
+        <span class="detalle-label">Tipo:</span>
+        <span class="detalle-valor">
+          <span class="badge badge-destinatario">${data.tipo_destinatario}</span>
+        </span>
+      </div>
+      <div class="detalle-campo">
+        <span class="detalle-label">Nombre:</span>
+        <span class="detalle-valor"><strong>${data.destinatario_principal || 'No especificado'}</strong></span>
+      </div>
+      ${data.contacto_principal ? `
+      <div class="detalle-campo">
+        <span class="detalle-label">Referencia:</span>
+        <span class="detalle-valor">${data.contacto_principal}</span>
+      </div>
+      ` : ''}
+      ${data.email_principal ? `
+      <div class="detalle-campo">
+        <span class="detalle-label">Email:</span>
+        <span class="detalle-valor"><i class="ti ti-mail me-1"></i>${data.email_principal}</span>
+      </div>
+      ` : ''}
+      ${data.telefono_principal ? `
+      <div class="detalle-campo">
+        <span class="detalle-label">Teléfono:</span>
+        <span class="detalle-valor"><i class="ti ti-phone me-1"></i>${data.telefono_principal}</span>
+      </div>
+      ` : ''}
+    </div>
+    `;
+    
+    // Sección: Contenido del Mensaje
+    html += `
+    <div class="detalle-seccion">
+      <div class="detalle-titulo">
+        <i class="ti ti-message"></i>
+        Contenido del Mensaje
+      </div>
+      ${data.asunto ? `
+      <div class="detalle-campo">
+        <span class="detalle-label">Asunto:</span>
+        <span class="detalle-valor"><strong>${data.asunto}</strong></span>
+      </div>
+      ` : ''}
+      <div class="detalle-campo" style="flex-direction: column;">
+        <span class="detalle-label mb-2">Mensaje:</span>
+        <div class="contenido-mensaje">${data.contenido || '<em>Sin contenido</em>'}</div>
+      </div>
+    </div>
+    `;
+    
+    // Sección: Timeline de Eventos
+    html += `
+    <div class="detalle-seccion">
+      <div class="detalle-titulo">
+        <i class="ti ti-clock"></i>
+        Línea de Tiempo
+      </div>
+      
+      <div class="timeline-item">
+        <div class="timeline-icon" style="background: #6c757d;">
+          <i class="ti ti-plus"></i>
+        </div>
+        <div class="timeline-content">
+          <strong>Mensaje creado</strong>
+          <span class="timeline-fecha">${data.created_at_formateada}</span>
+        </div>
+      </div>
+      
+      ${data.fecha_envio_formateada ? `
+      <div class="timeline-item">
+        <div class="timeline-icon" style="background: #007bff;">
+          <i class="ti ti-send"></i>
+        </div>
+        <div class="timeline-content">
+          <strong>Enviado</strong>
+          <span class="timeline-fecha">${data.fecha_envio_formateada}</span>
+        </div>
+      </div>
+      ` : ''}
+      
+      ${data.fecha_entrega_formateada ? `
+      <div class="timeline-item">
+        <div class="timeline-icon" style="background: #28a745;">
+          <i class="ti ti-check"></i>
+        </div>
+        <div class="timeline-content">
+          <strong>Entregado</strong>
+          <span class="timeline-fecha">${data.fecha_entrega_formateada}</span>
+          ${data.tiempo_entrega_texto ? `<small class="text-muted"> (${data.tiempo_entrega_texto})</small>` : ''}
+        </div>
+      </div>
+      ` : ''}
+      
+      ${data.fecha_lectura_formateada ? `
+      <div class="timeline-item">
+        <div class="timeline-icon" style="background: #17a2b8;">
+          <i class="ti ti-eye"></i>
+        </div>
+        <div class="timeline-content">
+          <strong>Leído</strong>
+          <span class="timeline-fecha">${data.fecha_lectura_formateada}</span>
+        </div>
+      </div>
+      ` : ''}
+    </div>
+    `;
+    
+    // Sección: Información Técnica
+    html += `
+    <div class="detalle-seccion">
+      <div class="detalle-titulo">
+        <i class="ti ti-settings"></i>
+        Información Técnica
+      </div>
+      ${data.proveedor_id ? `
+      <div class="detalle-campo">
+        <span class="detalle-label">Proveedor ID:</span>
+        <span class="detalle-valor"><code>${data.proveedor_id}</code></span>
+      </div>
+      ` : ''}
+      ${data.mensaje_id_externo ? `
+      <div class="detalle-campo">
+        <span class="detalle-label">ID Externo:</span>
+        <span class="detalle-valor"><code>${data.mensaje_id_externo}</code></span>
+      </div>
+      ` : ''}
+      ${data.costo ? `
+      <div class="detalle-campo">
+        <span class="detalle-label">Costo:</span>
+        <span class="detalle-valor">
+          <div class="costo-detalle-box">
+            S/ ${parseFloat(data.costo).toFixed(4)}
+          </div>
+        </span>
+      </div>
+      ` : ''}
+    </div>
+    `;
+    
+    // Sección: Error (si existe)
+    if (data.error_mensaje) {
+        html += `
+        <div class="detalle-seccion">
+          <div class="detalle-titulo">
+            <i class="ti ti-alert-triangle"></i>
+            Error Detectado
+          </div>
+          <div class="error-detalle-box">
+            <i class="ti ti-x me-2"></i>${data.error_mensaje}
+          </div>
+        </div>
+        `;
+    }
+    
+    // Insertar el HTML en el modal
+    $('#detalleMensajeContenido').html(html);
+    
+    // Mostrar el modal
+    $('#modalDetalleMensaje').modal('show');
+}
 
             // Auto-refresh cada 30 segundos para mensajes en proceso
             setInterval(function() {
               var mensajesPendientes = $('.estado-pendiente, .estado-enviado').length;
               if (mensajesPendientes > 0) {
-                // Solo recargar si hay mensajes en proceso
-                table.ajax.reload(null, false);
+                // Recargar toda la página en lugar de solo la tabla
+                location.reload();
               }
             }, 30000);
 
