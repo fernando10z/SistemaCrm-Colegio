@@ -1,57 +1,55 @@
 <?php
-// Obtener familias activas para el select
+// Obtener familias activas para el select de edición
 include 'bd/conexion.php';
-$familias_query = "SELECT id, codigo_familia, apellido_principal, nivel_socioeconomico 
-                   FROM familias WHERE activo = 1 ORDER BY apellido_principal ASC";
-$familias_result = $conn->query($familias_query);
+$familias_query_edit = "SELECT id, codigo_familia, apellido_principal, nivel_socioeconomico 
+                        FROM familias WHERE activo = 1 ORDER BY apellido_principal ASC";
+$familias_result_edit = $conn->query($familias_query_edit);
 ?>
 
 <style>
-    .swal2-container {
+    /* Estilos específicos para el modal de edición */
+    .modal-editar .swal2-container {
         z-index: 9999999 !important;
     }
-    .is-invalid {
+    .modal-editar .is-invalid {
         border-color: #dc3545 !important;
     }
-    .invalid-feedback {
+    .modal-editar .invalid-feedback {
         display: block;
         color: #dc3545;
         font-size: 0.875rem;
         margin-top: 0.25rem;
     }
-    
-    /* Estilos para el input de búsqueda de familia */
-    .familia-selected {
+    .modal-editar .familia-selected {
         background: #e8f5e9 !important;
         border-color: #81c784 !important;
     }
-    
-    /* Estilos para la tabla de familias */
-    .familia-row:hover {
+    .modal-editar .familia-row:hover {
         background: #f5f5f5;
         cursor: pointer;
     }
-    
-    .familia-row.selected {
+    .modal-editar .familia-row.selected {
         background: #e8f5e9 !important;
     }
 </style>
 
-<!-- Modal Registrar Apoderado -->
-<div class="modal fade" id="modalRegistrarApoderado" tabindex="-1" aria-labelledby="modalRegistrarApoderadoLabel" aria-hidden="true">
+<!-- Modal Editar Apoderado -->
+<div class="modal fade modal-editar" id="modalEditarApoderado" tabindex="-1" aria-labelledby="modalEditarApoderadoLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl">
     <div class="modal-content" style="background: #ffffff; border: none; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.08);">
-      <div class="modal-header" style="background: linear-gradient(135deg, #a8d5e2 0%, #c9e4ca 100%); border-bottom: none; border-radius: 12px 12px 0 0; padding: 1.5rem;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #64b5f6 0%, #81c784 100%); border-bottom: none; border-radius: 12px 12px 0 0; padding: 1.5rem;">
         <div>
-          <h5 class="modal-title" id="modalRegistrarApoderadoLabel" style="color: #2c3e50; font-weight: 600; margin: 0;">
-            <i class="ti ti-user-plus me-2"></i>Registrar Nuevo Apoderado
+          <h5 class="modal-title" id="modalEditarApoderadoLabel" style="color: #2c3e50; font-weight: 600; margin: 0;">
+            <i class="ti ti-edit me-2"></i>Editar Datos del Apoderado
           </h5>
-          <small style="color: #546e7a; display: block; margin-top: 0.25rem;">Complete los datos del apoderado</small>
+          <small style="color: #546e7a; display: block; margin-top: 0.25rem;">Modifique la información del apoderado</small>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       
-      <form id="formRegistrarApoderado">
+      <form id="formEditarApoderado">
+        <input type="hidden" name="apoderado_id" id="edit_apoderado_id">
+        
         <div class="modal-body" style="padding: 2rem; max-height: 70vh; overflow-y: auto;">
           
           <!-- Sección: Información Familiar -->
@@ -67,23 +65,23 @@ $familias_result = $conn->query($familias_query);
                   Familia <span style="color: #e74c3c;">*</span>
                 </label>
                 <div class="input-group">
-                  <input type="text" id="familia_seleccionada" class="form-control" readonly required
+                  <input type="text" id="edit_familia_seleccionada" class="form-control" readonly required
                          placeholder="Haga clic en el botón para buscar"
                          style="border: 1.5px solid #e0e0e0; border-radius: 8px 0 0 8px; padding: 0.6rem; background: #fafafa;">
-                  <input type="hidden" name="familia_id" id="familia_id" required>
-                  <button type="button" class="btn" id="btnBuscarFamilia"
+                  <input type="hidden" name="familia_id" id="edit_familia_id" required>
+                  <button type="button" class="btn" id="btnBuscarFamiliaEdit"
                           style="background: linear-gradient(135deg, #81c784 0%, #66bb6a 100%); color: white; border: none; border-radius: 0 8px 8px 0; padding: 0.6rem 1.2rem;">
                     <i class="ti ti-search"></i> Buscar
                   </button>
                 </div>
-                <small class="text-muted" style="font-size: 0.75rem;">Haga clic en "Buscar" para seleccionar una familia</small>
+                <small class="text-muted" style="font-size: 0.75rem;">Haga clic en "Buscar" para cambiar la familia</small>
               </div>
               
               <div class="col-md-6">
                 <label class="form-label" style="color: #546e7a; font-weight: 500;">
                   Tipo de Apoderado <span style="color: #e74c3c;">*</span>
                 </label>
-                <select name="tipo_apoderado" class="form-select" required 
+                <select name="tipo_apoderado" id="edit_tipo_apoderado" class="form-select" required 
                         style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;">
                   <option value="">Seleccione tipo</option>
                   <option value="titular">Titular</option>
@@ -106,7 +104,7 @@ $familias_result = $conn->query($familias_query);
                 <label class="form-label" style="color: #546e7a; font-weight: 500;">
                   Tipo Documento <span style="color: #e74c3c;">*</span>
                 </label>
-                <select name="tipo_documento" id="tipo_documento" class="form-select" required 
+                <select name="tipo_documento" id="edit_tipo_documento" class="form-select" required 
                         style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;">
                   <option value="DNI">DNI</option>
                   <option value="CE">Carnet de Extranjería</option>
@@ -118,17 +116,17 @@ $familias_result = $conn->query($familias_query);
                 <label class="form-label" style="color: #546e7a; font-weight: 500;">
                   Número Documento <span style="color: #e74c3c;">*</span>
                 </label>
-                <input type="text" name="numero_documento" id="numero_documento" class="form-control" required maxlength="12"
+                <input type="text" name="numero_documento" id="edit_numero_documento" class="form-control" required maxlength="12"
                        style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;"
                        placeholder="Ej: 12345678">
-                <small class="text-muted" id="doc_help" style="font-size: 0.7rem;">El DNI debe tener exactamente 8 dígitos</small>
+                <small class="text-muted" id="edit_doc_help" style="font-size: 0.7rem;">El DNI debe tener exactamente 8 dígitos</small>
               </div>
               
               <div class="col-md-3">
                 <label class="form-label" style="color: #546e7a; font-weight: 500;">
                   Nombres <span style="color: #e74c3c;">*</span>
                 </label>
-                <input type="text" name="nombres" class="form-control" required maxlength="100"
+                <input type="text" name="nombres" id="edit_nombres" class="form-control" required maxlength="100"
                        style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;"
                        placeholder="Nombres completos">
               </div>
@@ -137,21 +135,21 @@ $familias_result = $conn->query($familias_query);
                 <label class="form-label" style="color: #546e7a; font-weight: 500;">
                   Apellidos <span style="color: #e74c3c;">*</span>
                 </label>
-                <input type="text" name="apellidos" class="form-control" required maxlength="100"
+                <input type="text" name="apellidos" id="edit_apellidos" class="form-control" required maxlength="100"
                        style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;"
                        placeholder="Apellidos completos">
               </div>
               
               <div class="col-md-4">
                 <label class="form-label" style="color: #546e7a; font-weight: 500;">Fecha de Nacimiento</label>
-                <input type="date" name="fecha_nacimiento" id="fecha_nacimiento" class="form-control"
+                <input type="date" name="fecha_nacimiento" id="edit_fecha_nacimiento" class="form-control"
                        style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;">
                 <small class="text-muted" style="font-size: 0.7rem;">La persona debe tener al menos 20 años</small>
               </div>
               
               <div class="col-md-4">
                 <label class="form-label" style="color: #546e7a; font-weight: 500;">Género</label>
-                <select name="genero" class="form-select" 
+                <select name="genero" id="edit_genero" class="form-select" 
                         style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;">
                   <option value="">Seleccione</option>
                   <option value="M">Masculino</option>
@@ -162,7 +160,7 @@ $familias_result = $conn->query($familias_query);
               
               <div class="col-md-4">
                 <label class="form-label" style="color: #546e7a; font-weight: 500;">Estado Civil</label>
-                <select name="estado_civil" class="form-select" 
+                <select name="estado_civil" id="edit_estado_civil" class="form-select" 
                         style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;">
                   <option value="">Seleccione</option>
                   <option value="soltero">Soltero(a)</option>
@@ -177,58 +175,58 @@ $familias_result = $conn->query($familias_query);
 
           <!-- Sección: Información de Contacto -->
           <div class="mb-4">
-              <div class="d-flex align-items-center mb-3" style="border-bottom: 2px solid #e1f5fe; padding-bottom: 0.75rem;">
-                <i class="ti ti-phone" style="font-size: 1.5rem; color: #4fc3f7; margin-right: 0.75rem;"></i>
-                <h6 class="mb-0" style="color: #2c3e50; font-weight: 600;">Información de Contacto</h6>
+            <div class="d-flex align-items-center mb-3" style="border-bottom: 2px solid #e1f5fe; padding-bottom: 0.75rem;">
+              <i class="ti ti-phone" style="font-size: 1.5rem; color: #4fc3f7; margin-right: 0.75rem;"></i>
+              <h6 class="mb-0" style="color: #2c3e50; font-weight: 600;">Información de Contacto</h6>
+            </div>
+            
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label" style="color: #546e7a; font-weight: 500;">Email</label>
+                <input type="email" name="email" id="edit_email" class="form-control" maxlength="100"
+                       style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;"
+                       placeholder="ejemplo@correo.com">
               </div>
               
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label" style="color: #546e7a; font-weight: 500;">Email</label>
-                  <input type="email" name="email" class="form-control" maxlength="100"
-                        style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;"
-                        placeholder="ejemplo@correo.com">
-                </div>
-                
-                <div class="col-md-6">
-                  <label class="form-label" style="color: #546e7a; font-weight: 500;">Preferencia de Contacto</label>
-                  <select name="preferencia_contacto" class="form-select" 
-                          style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;">
-                    <option value="whatsapp">WhatsApp</option>
-                    <option value="email">Email</option>
-                    <option value="llamada">Llamada</option>
-                    <option value="sms">SMS</option>
-                  </select>
-                </div>
-                
-                <div class="col-md-4">
-                  <label class="form-label" style="color: #546e7a; font-weight: 500;">
-                    Teléfono Principal <span style="color: #e74c3c;">*</span>
-                  </label>
-                  <input type="text" name="telefono_principal" id="telefono_principal" class="form-control" required maxlength="9"
-                        style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;"
-                        placeholder="999999999">
-                  <small class="text-muted" style="font-size: 0.7rem;">Debe tener exactamente 9 dígitos</small>
-                </div>
-                
-                <div class="col-md-4">
-                  <label class="form-label" style="color: #546e7a; font-weight: 500;">Teléfono Secundario</label>
-                  <input type="text" name="telefono_secundario" id="telefono_secundario" class="form-control" maxlength="9"
-                        style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;"
-                        placeholder="999999999">
-                  <small class="text-muted" style="font-size: 0.7rem;">Opcional - 9 dígitos si lo completa</small>
-                </div>
-                
-                <div class="col-md-4">
-                  <label class="form-label" style="color: #546e7a; font-weight: 500;">
-                    WhatsApp <span style="color: #e74c3c;">*</span>
-                  </label>
-                  <input type="text" name="whatsapp" id="whatsapp" class="form-control" required maxlength="9"
-                        style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;"
-                        placeholder="999999999">
-                  <small class="text-muted" style="font-size: 0.7rem;">Debe tener exactamente 9 dígitos</small>
-                </div>
+              <div class="col-md-6">
+                <label class="form-label" style="color: #546e7a; font-weight: 500;">Preferencia de Contacto</label>
+                <select name="preferencia_contacto" id="edit_preferencia_contacto" class="form-select" 
+                        style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;">
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="email">Email</option>
+                  <option value="llamada">Llamada</option>
+                  <option value="sms">SMS</option>
+                </select>
               </div>
+              
+              <div class="col-md-4">
+                <label class="form-label" style="color: #546e7a; font-weight: 500;">
+                  Teléfono Principal <span style="color: #e74c3c;">*</span>
+                </label>
+                <input type="text" name="telefono_principal" id="edit_telefono_principal" class="form-control" required maxlength="9"
+                       style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;"
+                       placeholder="999999999">
+                <small class="text-muted" style="font-size: 0.7rem;">Debe tener exactamente 9 dígitos</small>
+              </div>
+              
+              <div class="col-md-4">
+                <label class="form-label" style="color: #546e7a; font-weight: 500;">Teléfono Secundario</label>
+                <input type="text" name="telefono_secundario" id="edit_telefono_secundario" class="form-control" maxlength="9"
+                       style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;"
+                       placeholder="999999999">
+                <small class="text-muted" style="font-size: 0.7rem;">Opcional - 9 dígitos si lo completa</small>
+              </div>
+              
+              <div class="col-md-4">
+                <label class="form-label" style="color: #546e7a; font-weight: 500;">
+                  WhatsApp <span style="color: #e74c3c;">*</span>
+                </label>
+                <input type="text" name="whatsapp" id="edit_whatsapp" class="form-control" required maxlength="9"
+                       style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;"
+                       placeholder="999999999">
+                <small class="text-muted" style="font-size: 0.7rem;">Debe tener exactamente 9 dígitos</small>
+              </div>
+            </div>
           </div>
 
           <!-- Sección: Información Profesional -->
@@ -241,21 +239,21 @@ $familias_result = $conn->query($familias_query);
             <div class="row g-3">
               <div class="col-md-4">
                 <label class="form-label" style="color: #546e7a; font-weight: 500;">Ocupación</label>
-                <input type="text" name="ocupacion" class="form-control" maxlength="100"
+                <input type="text" name="ocupacion" id="edit_ocupacion" class="form-control" maxlength="100"
                        style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;"
                        placeholder="Ej: Ingeniero, Docente">
               </div>
               
               <div class="col-md-4">
                 <label class="form-label" style="color: #546e7a; font-weight: 500;">Empresa</label>
-                <input type="text" name="empresa" class="form-control" maxlength="100"
+                <input type="text" name="empresa" id="edit_empresa" class="form-control" maxlength="100"
                        style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;"
                        placeholder="Nombre de la empresa">
               </div>
               
               <div class="col-md-4">
                 <label class="form-label" style="color: #546e7a; font-weight: 500;">Nivel Educativo</label>
-                <input type="text" name="nivel_educativo" class="form-control" maxlength="50"
+                <input type="text" name="nivel_educativo" id="edit_nivel_educativo" class="form-control" maxlength="50"
                        style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;"
                        placeholder="Ej: Universitario">
               </div>
@@ -272,9 +270,9 @@ $familias_result = $conn->query($familias_query);
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label" style="color: #546e7a; font-weight: 500;">Nivel de Compromiso</label>
-                <select name="nivel_compromiso" class="form-select" 
+                <select name="nivel_compromiso" id="edit_nivel_compromiso" class="form-select" 
                         style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;">
-                  <option value="medio" selected>Medio</option>
+                  <option value="medio">Medio</option>
                   <option value="alto">Alto</option>
                   <option value="bajo">Bajo</option>
                 </select>
@@ -282,9 +280,9 @@ $familias_result = $conn->query($familias_query);
               
               <div class="col-md-6">
                 <label class="form-label" style="color: #546e7a; font-weight: 500;">Nivel de Participación</label>
-                <select name="nivel_participacion" class="form-select" 
+                <select name="nivel_participacion" id="edit_nivel_participacion" class="form-select" 
                         style="border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 0.6rem; background: #fafafa;">
-                  <option value="activo" selected>Activo</option>
+                  <option value="activo">Activo</option>
                   <option value="muy_activo">Muy Activo</option>
                   <option value="poco_activo">Poco Activo</option>
                   <option value="inactivo">Inactivo</option>
@@ -300,9 +298,9 @@ $familias_result = $conn->query($familias_query);
                   style="background: #eceff1; color: #546e7a; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 500;">
             <i class="ti ti-x me-1"></i>Cancelar
           </button>
-          <button type="submit" class="btn" id="btnRegistrarApoderado"
-                  style="background: linear-gradient(135deg, #81c784 0%, #66bb6a 100%); color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 500; box-shadow: 0 4px 12px rgba(129, 199, 132, 0.3);">
-            <i class="ti ti-device-floppy me-1"></i>Registrar Apoderado
+          <button type="submit" class="btn" id="btnActualizarApoderado"
+                  style="background: linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%); color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 500; box-shadow: 0 4px 12px rgba(100, 181, 246, 0.3);">
+            <i class="ti ti-device-floppy me-1"></i>Actualizar Datos
           </button>
         </div>
       </form>
@@ -310,13 +308,13 @@ $familias_result = $conn->query($familias_query);
   </div>
 </div>
 
-<!-- Modal Buscar Familia -->
-<div class="modal fade" id="modalBuscarFamilia" tabindex="-1" aria-labelledby="modalBuscarFamiliaLabel" aria-hidden="true">
+<!-- Modal Buscar Familia para Edición -->
+<div class="modal fade" id="modalBuscarFamiliaEdit" tabindex="-1" aria-labelledby="modalBuscarFamiliaEditLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content" style="background: #ffffff; border: none; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.08);">
       <div class="modal-header" style="background: linear-gradient(135deg, #a8d5e2 0%, #c9e4ca 100%); border-bottom: none; border-radius: 12px 12px 0 0; padding: 1.5rem;">
         <div>
-          <h5 class="modal-title" id="modalBuscarFamiliaLabel" style="color: #2c3e50; font-weight: 600; margin: 0;">
+          <h5 class="modal-title" id="modalBuscarFamiliaEditLabel" style="color: #2c3e50; font-weight: 600; margin: 0;">
             <i class="ti ti-search me-2"></i>Buscar y Seleccionar Familia
           </h5>
           <small style="color: #546e7a; display: block; margin-top: 0.25rem;">Seleccione una familia para continuar</small>
@@ -331,7 +329,7 @@ $familias_result = $conn->query($familias_query);
             <span class="input-group-text" style="background: #f5f5f5; border: 1.5px solid #e0e0e0;">
               <i class="ti ti-search"></i>
             </span>
-            <input type="text" id="buscar_familia_input" class="form-control" 
+            <input type="text" id="buscar_familia_input_edit" class="form-control" 
                    placeholder="Buscar por código o apellido..."
                    style="border: 1.5px solid #e0e0e0; padding: 0.6rem;">
           </div>
@@ -348,12 +346,12 @@ $familias_result = $conn->query($familias_query);
                 <th style="color: #546e7a; font-weight: 600; padding: 0.75rem; text-align: center;">Acción</th>
               </tr>
             </thead>
-            <tbody id="tabla_familias">
+            <tbody id="tabla_familias_edit">
               <?php 
               // Reiniciar el puntero del resultado
-              $conn->query($familias_query);
-              $familias_result = $conn->query($familias_query);
-              while($familia = $familias_result->fetch_assoc()): 
+              $conn->query($familias_query_edit);
+              $familias_result_edit = $conn->query($familias_query_edit);
+              while($familia = $familias_result_edit->fetch_assoc()): 
               ?>
                 <tr class="familia-row" data-id="<?php echo $familia['id']; ?>" 
                     data-codigo="<?php echo htmlspecialchars($familia['codigo_familia']); ?>"
@@ -371,7 +369,7 @@ $familias_result = $conn->query($familias_query);
                     <?php endif; ?>
                   </td>
                   <td style="padding: 0.75rem; text-align: center;">
-                    <button type="button" class="btn btn-sm btn-seleccionar-familia"
+                    <button type="button" class="btn btn-sm btn-seleccionar-familia-edit"
                             style="background: linear-gradient(135deg, #81c784 0%, #66bb6a 100%); color: white; border: none; padding: 0.4rem 1rem; border-radius: 6px; font-size: 0.85rem;">
                       <i class="ti ti-check me-1"></i>Seleccionar
                     </button>
@@ -393,48 +391,19 @@ $familias_result = $conn->query($familias_query);
   </div>
 </div>
 
-<!-- SweetAlert2 CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css">
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
-
 <script>
 $(document).ready(function() {
     
-    // Configurar fecha de nacimiento para que comience en el año correcto (20 años atrás)
-    function configurarFechaNacimiento() {
-        const hoy = new Date();
-        const añoActual = hoy.getFullYear();
-        const mesActual = hoy.getMonth();
-        const diaActual = hoy.getDate();
-        
-        // Fecha máxima: hoy
-        const maxFecha = hoy.toISOString().split('T')[0];
-        
-        // Calcular fecha para persona de 20 años (año actual - 20 años)
-        const fechaInicio = new Date(añoActual - 20, mesActual, diaActual);
-        const inicioFecha = fechaInicio.toISOString().split('T')[0];
-        
-        $('#fecha_nacimiento').attr('max', maxFecha);
-        $('#fecha_nacimiento').attr('min', '1924-01-01');
-        
-        // Establecer el valor inicial en el año donde la persona cumple 20 años
-        $('#fecha_nacimiento').val(inicioFecha);
-    }
-    
-    configurarFechaNacimiento();
-    
-    // Abrir modal de búsqueda de familia
-    $('#btnBuscarFamilia').on('click', function() {
-        $('#modalBuscarFamilia').modal('show');
+    // Abrir modal de búsqueda de familia en edición
+    $('#btnBuscarFamiliaEdit').on('click', function() {
+        $('#modalBuscarFamiliaEdit').modal('show');
     });
     
-    // Búsqueda en tiempo real de familias
-    $('#buscar_familia_input').on('keyup', function() {
+    // Búsqueda en tiempo real de familias para edición
+    $('#buscar_familia_input_edit').on('keyup', function() {
         const busqueda = $(this).val().toLowerCase();
         
-        $('#tabla_familias tr').each(function() {
+        $('#tabla_familias_edit tr').each(function() {
             const codigo = $(this).data('codigo').toString().toLowerCase();
             const apellido = $(this).data('apellido').toString().toLowerCase();
             const nse = $(this).data('nse').toString().toLowerCase();
@@ -447,8 +416,8 @@ $(document).ready(function() {
         });
     });
     
-    // Seleccionar familia
-    $(document).on('click', '.btn-seleccionar-familia', function() {
+    // Seleccionar familia en edición
+    $(document).on('click', '.btn-seleccionar-familia-edit', function() {
         const $row = $(this).closest('tr');
         const id = $row.data('id');
         const codigo = $row.data('codigo');
@@ -462,15 +431,15 @@ $(document).ready(function() {
         }
         
         // Asignar valores
-        $('#familia_id').val(id);
-        $('#familia_seleccionada').val(textoFamilia).addClass('familia-selected');
+        $('#edit_familia_id').val(id);
+        $('#edit_familia_seleccionada').val(textoFamilia).addClass('familia-selected');
         
         // Cerrar modal
-        $('#modalBuscarFamilia').modal('hide');
+        $('#modalBuscarFamiliaEdit').modal('hide');
         
         // Limpiar búsqueda
-        $('#buscar_familia_input').val('');
-        $('#tabla_familias tr').show();
+        $('#buscar_familia_input_edit').val('');
+        $('#tabla_familias_edit tr').show();
         
         // Notificación
         Swal.fire({
@@ -485,12 +454,27 @@ $(document).ready(function() {
         });
     });
     
-    // Validación de fecha de nacimiento
-    $('#fecha_nacimiento').on('change', function() {
+    // Configurar fecha de nacimiento para edición
+    function configurarFechaNacimientoEdit() {
+        const hoy = new Date();
+        const añoActual = hoy.getFullYear();
+        const mesActual = hoy.getMonth();
+        const diaActual = hoy.getDate();
+        
+        const maxFecha = hoy.toISOString().split('T')[0];
+        const fechaInicio = new Date(añoActual - 20, mesActual, diaActual);
+        
+        $('#edit_fecha_nacimiento').attr('max', maxFecha);
+        $('#edit_fecha_nacimiento').attr('min', '1924-01-01');
+    }
+    
+    configurarFechaNacimientoEdit();
+    
+    // Validación de fecha de nacimiento en edición
+    $('#edit_fecha_nacimiento').on('change', function() {
         const fechaSeleccionada = new Date($(this).val());
         const hoy = new Date();
         
-        // Calcular edad
         let edad = hoy.getFullYear() - fechaSeleccionada.getFullYear();
         const mes = hoy.getMonth() - fechaSeleccionada.getMonth();
         if (mes < 0 || (mes === 0 && hoy.getDate() < fechaSeleccionada.getDate())) {
@@ -504,7 +488,7 @@ $(document).ready(function() {
                 text: 'No se pueden registrar fechas futuras',
                 confirmButtonColor: '#ffb74d'
             });
-            configurarFechaNacimiento(); // Restablecer a fecha correcta
+            $(this).val('');
         } else if (edad < 20) {
             Swal.fire({
                 icon: 'warning',
@@ -512,11 +496,11 @@ $(document).ready(function() {
                 text: 'El apoderado debe tener al menos 20 años de edad',
                 confirmButtonColor: '#ffb74d'
             });
-            configurarFechaNacimiento(); // Restablecer a fecha correcta
+            $(this).val('');
         }
     });
 
-    // Validación de documentos según tipo
+    // Validación de documentos en edición
     function validarDocumento(tipo, valor) {
         switch(tipo) {
             case 'DNI':
@@ -538,9 +522,9 @@ $(document).ready(function() {
         return {valido: true};
     }
 
-    // Validación en tiempo real del número de documento
-    $('#numero_documento').on('input', function() {
-        const tipoDoc = $('#tipo_documento').val();
+    // Validación en tiempo real del número de documento en edición
+    $('#edit_numero_documento').on('input', function() {
+        const tipoDoc = $('#edit_tipo_documento').val();
         let valor = $(this).val().toUpperCase();
         
         switch(tipoDoc) {
@@ -562,13 +546,13 @@ $(document).ready(function() {
         }
     });
     
-    // Cambiar configuración al cambiar tipo de documento
-    $('#tipo_documento').on('change', function() {
+    // Cambiar configuración al cambiar tipo de documento en edición
+    $('#edit_tipo_documento').on('change', function() {
         const tipo = $(this).val();
-        const $input = $('#numero_documento');
-        const $help = $('#doc_help');
+        const $input = $('#edit_numero_documento');
+        const $help = $('#edit_doc_help');
         
-        $input.val('').removeClass('is-invalid');
+        $input.removeClass('is-invalid');
         
         switch(tipo) {
             case 'DNI':
@@ -585,18 +569,17 @@ $(document).ready(function() {
                 break;
         }
     });
-$('#telefono_principal, #telefono_secundario, #whatsapp').on('input', function() {
-        // Solo permitir números
+
+    // Validación en tiempo real de teléfonos en edición
+    $('#edit_telefono_principal, #edit_telefono_secundario, #edit_whatsapp').on('input', function() {
         let valor = $(this).val().replace(/\D/g, '');
         
-        // Limitar a 9 dígitos
         if (valor.length > 9) {
             valor = valor.substr(0, 9);
         }
         
         $(this).val(valor);
         
-        // Validación visual
         if (valor.length > 0 && valor.length !== 9) {
             $(this).addClass('is-invalid');
         } else {
@@ -606,36 +589,34 @@ $('#telefono_principal, #telefono_secundario, #whatsapp').on('input', function()
     
     // Función para validar teléfonos
     function validarTelefono(valor, esOpcional = false) {
-        // Si es opcional y está vacío, es válido
         if (esOpcional && (!valor || valor.trim() === '')) {
             return {valido: true};
         }
         
-        // Si tiene valor, debe ser exactamente 9 dígitos
         if (!/^\d{9}$/.test(valor)) {
             return {valido: false, mensaje: 'El teléfono debe tener exactamente 9 dígitos'};
         }
         
         return {valido: true};
     }
-    
-    // Enviar formulario con validaciones completas
-    $('#formRegistrarApoderado').on('submit', function(e) {
+
+    // Enviar formulario de edición
+    $('#formEditarApoderado').on('submit', function(e) {
         e.preventDefault();
         
-        // Validar que se haya seleccionado una familia
-        if (!$('#familia_id').val()) {
+        // Validar familia
+        if (!$('#edit_familia_id').val()) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Familia Requerida',
-                text: 'Debe seleccionar una familia antes de continuar',
+                text: 'Debe seleccionar una familia',
                 confirmButtonColor: '#ffb74d'
             });
             return false;
         }
         
-        const tipoDoc = $('#tipo_documento').val();
-        const numDoc = $('#numero_documento').val();
+        const tipoDoc = $('#edit_tipo_documento').val();
+        const numDoc = $('#edit_numero_documento').val();
         
         // Validar documento
         const validacion = validarDocumento(tipoDoc, numDoc);
@@ -644,17 +625,14 @@ $('#telefono_principal, #telefono_secundario, #whatsapp').on('input', function()
                 icon: 'warning',
                 title: 'Documento Inválido',
                 text: validacion.mensaje,
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#ffb74d',
-                background: '#fffbf5',
-                iconColor: '#ffb74d'
+                confirmButtonColor: '#ffb74d'
             });
-            $('#numero_documento').addClass('is-invalid').focus();
+            $('#edit_numero_documento').addClass('is-invalid').focus();
             return false;
         }
         
-        // Validar fecha de nacimiento si está llena
-        const fechaNac = $('#fecha_nacimiento').val();
+        // Validar fecha si está llena
+        const fechaNac = $('#edit_fecha_nacimiento').val();
         if (fechaNac) {
             const fechaSeleccionada = new Date(fechaNac);
             const hoy = new Date();
@@ -672,13 +650,13 @@ $('#telefono_principal, #telefono_secundario, #whatsapp').on('input', function()
                     text: 'El apoderado debe tener al menos 20 años y no se permiten fechas futuras',
                     confirmButtonColor: '#ffb74d'
                 });
-                $('#fecha_nacimiento').addClass('is-invalid').focus();
+                $('#edit_fecha_nacimiento').addClass('is-invalid').focus();
                 return false;
             }
         }
         
-        // Validar teléfono principal (obligatorio)
-        const telPrincipal = $('#telefono_principal').val();
+        // Validar teléfonos
+        const telPrincipal = $('#edit_telefono_principal').val();
         const validacionTelPrincipal = validarTelefono(telPrincipal, false);
         if (!validacionTelPrincipal.valido) {
             Swal.fire({
@@ -687,12 +665,11 @@ $('#telefono_principal, #telefono_secundario, #whatsapp').on('input', function()
                 text: validacionTelPrincipal.mensaje,
                 confirmButtonColor: '#ffb74d'
             });
-            $('#telefono_principal').addClass('is-invalid').focus();
+            $('#edit_telefono_principal').addClass('is-invalid').focus();
             return false;
         }
         
-        // Validar teléfono secundario (opcional)
-        const telSecundario = $('#telefono_secundario').val();
+        const telSecundario = $('#edit_telefono_secundario').val();
         if (telSecundario && telSecundario.trim() !== '') {
             const validacionTelSecundario = validarTelefono(telSecundario, false);
             if (!validacionTelSecundario.valido) {
@@ -702,13 +679,12 @@ $('#telefono_principal, #telefono_secundario, #whatsapp').on('input', function()
                     text: validacionTelSecundario.mensaje + ' (o déjelo vacío)',
                     confirmButtonColor: '#ffb74d'
                 });
-                $('#telefono_secundario').addClass('is-invalid').focus();
+                $('#edit_telefono_secundario').addClass('is-invalid').focus();
                 return false;
             }
         }
         
-        // Validar WhatsApp (obligatorio)
-        const whatsapp = $('#whatsapp').val();
+        const whatsapp = $('#edit_whatsapp').val();
         const validacionWhatsApp = validarTelefono(whatsapp, false);
         if (!validacionWhatsApp.valido) {
             Swal.fire({
@@ -717,48 +693,45 @@ $('#telefono_principal, #telefono_secundario, #whatsapp').on('input', function()
                 text: validacionWhatsApp.mensaje,
                 confirmButtonColor: '#ffb74d'
             });
-            $('#whatsapp').addClass('is-invalid').focus();
+            $('#edit_whatsapp').addClass('is-invalid').focus();
             return false;
         }
         
-        // Enviar datos si todo es válido
+        // Enviar datos
         $.ajax({
-            url: 'actions/procesar_registrar_apoderado.php',
+            url: 'actions/procesar_editar_apoderado.php',
             method: 'POST',
             data: $(this).serialize(),
             dataType: 'json',
             beforeSend: function() {
-                $('#btnRegistrarApoderado').prop('disabled', true)
-                    .html('<i class="ti ti-loader ti-spin me-1"></i>Registrando...');
+                $('#btnActualizarApoderado').prop('disabled', true)
+                    .html('<i class="ti ti-loader ti-spin me-1"></i>Actualizando...');
             },
             success: function(response) {
                 if (response.success) {
                     Swal.fire({
                         icon: 'success',
-                        title: '¡Registro Exitoso!',
+                        title: '¡Actualización Exitosa!',
                         html: `
                             <div style="text-align: left; padding: 1rem;">
                                 <p style="margin-bottom: 0.5rem;"><strong>Apoderado:</strong> ${response.nombre_completo}</p>
-                                <p style="margin-bottom: 0;"><strong>ID:</strong> ${response.id}</p>
+                                <p style="margin-bottom: 0;">Los datos se han actualizado correctamente</p>
                             </div>
                         `,
                         confirmButtonText: 'Aceptar',
-                        confirmButtonColor: '#81c784',
-                        background: '#f1f8f4',
-                        iconColor: '#81c784',
+                        confirmButtonColor: '#64b5f6',
+                        background: '#f1f8ff',
+                        iconColor: '#64b5f6',
                         timer: 3000,
                         timerProgressBar: true
                     }).then(() => {
-                        $('#modalRegistrarApoderado').modal('hide');
-                        $('#formRegistrarApoderado')[0].reset();
-                        $('#familia_seleccionada').val('').removeClass('familia-selected');
-                        $('#familia_id').val('');
+                        $('#modalEditarApoderado').modal('hide');
                         location.reload();
                     });
                 } else {
                     Swal.fire({
                         icon: 'error',
-                        title: 'Error al Registrar',
+                        title: 'Error al Actualizar',
                         text: response.message,
                         confirmButtonText: 'Cerrar',
                         confirmButtonColor: '#ef9a9a',
@@ -772,44 +745,58 @@ $('#telefono_principal, #telefono_secundario, #whatsapp').on('input', function()
                 Swal.fire({
                     icon: 'error',
                     title: 'Error de Conexión',
-                    text: 'No se pudo conectar con el servidor. Por favor, intente nuevamente.',
-                    footer: '<small>Revise la consola del navegador para más detalles</small>',
+                    text: 'No se pudo conectar con el servidor',
                     confirmButtonText: 'Cerrar',
-                    confirmButtonColor: '#ef9a9a',
-                    background: '#ffebee',
-                    iconColor: '#ef5350'
+                    confirmButtonColor: '#ef9a9a'
                 });
             },
             complete: function() {
-                $('#btnRegistrarApoderado').prop('disabled', false)
-                    .html('<i class="ti ti-device-floppy me-1"></i>Registrar Apoderado');
+                $('#btnActualizarApoderado').prop('disabled', false)
+                    .html('<i class="ti ti-device-floppy me-1"></i>Actualizar Datos');
             }
         });
     });
-    
-    // Limpiar al cerrar modal principal
-    $('#modalRegistrarApoderado').on('hidden.bs.modal', function () {
-        $('#formRegistrarApoderado')[0].reset();
-        $('#familia_seleccionada').val('').removeClass('familia-selected');
-        $('#familia_id').val('');
-        $('.is-invalid').removeClass('is-invalid');
-        configurarFechaNacimiento();
-    });
 });
+
+// Función para llenar el formulario de edición (llamada desde apoderados.php)
+function llenarFormularioEdicion(data) {
+    $('#edit_apoderado_id').val(data.id);
+    
+    // Familia
+    let textoFamilia = data.codigo_familia + ' - ' + data.familia_apellido;
+    if (data.nivel_socioeconomico) {
+        textoFamilia += ' [NSE: ' + data.nivel_socioeconomico + ']';
+    }
+    $('#edit_familia_id').val(data.familia_id);
+    $('#edit_familia_seleccionada').val(textoFamilia).addClass('familia-selected');
+    
+    // Datos básicos
+    $('#edit_tipo_apoderado').val(data.tipo_apoderado);
+    $('#edit_tipo_documento').val(data.tipo_documento);
+    $('#edit_numero_documento').val(data.numero_documento);
+    $('#edit_nombres').val(data.nombres);
+    $('#edit_apellidos').val(data.apellidos);
+    $('#edit_fecha_nacimiento').val(data.fecha_nacimiento);
+    $('#edit_genero').val(data.genero);
+    $('#edit_estado_civil').val(data.estado_civil);
+    
+    // Contacto
+    $('#edit_email').val(data.email);
+    $('#edit_preferencia_contacto').val(data.preferencia_contacto);
+    $('#edit_telefono_principal').val(data.telefono_principal);
+    $('#edit_telefono_secundario').val(data.telefono_secundario);
+    $('#edit_whatsapp').val(data.whatsapp);
+    
+    // Profesional
+    $('#edit_ocupacion').val(data.ocupacion);
+    $('#edit_empresa').val(data.empresa);
+    $('#edit_nivel_educativo').val(data.nivel_educativo);
+    
+    // Participación
+    $('#edit_nivel_compromiso').val(data.nivel_compromiso);
+    $('#edit_nivel_participacion').val(data.nivel_participacion);
+    
+    // Abrir modal
+    $('#modalEditarApoderado').modal('show');
+}
 </script>
-
-<style>
-.border-radius-12 {
-    border-radius: 12px !important;
-}
-
-.btn-custom-pastel {
-    border-radius: 8px !important;
-    font-weight: 500 !important;
-    padding: 0.6rem 1.5rem !important;
-}
-
-.swal2-popup {
-    font-family: 'Public Sans', sans-serif !important;
-}
-</style>

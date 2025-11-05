@@ -7,35 +7,38 @@ use Dompdf\Options;
 date_default_timezone_set('America/Lima'); // Configurar zona horaria
 
 // Obtener datos del sistema desde configuración
-$configQuery = "SELECT valor FROM configuracion_sistema WHERE clave IN ('nombre_institucion', 'email_principal', 'telefono_principal') ORDER BY clave";
+$configQuery = "SELECT clave, valor FROM configuracion_sistema WHERE clave IN ('nombre_institucion', 'email_principal', 'telefono_principal', 'imagen')";
 $configResult = $conn->query($configQuery);
 
 $config = [
-    'nombre_institucion' => 'Sistema CRM Escolar',
-    'email_principal' => 'contacto@crm.edu.pe',
-    'telefono_principal' => '+51 1 234-5678'
+    'nombre_institucion' => 'Sistema CRM',
+    'email_principal' => 'info@sistema.com',
+    'telefono_principal' => '+51 000000000',
+    'imagen' => 'assets/images/logocolgio.jpeg'
 ];
 
-if ($configResult) {
-    $configs = $configResult->fetch_all(MYSQLI_ASSOC);
-    foreach ($configs as $cfg) {
-        switch ($cfg['clave']) {
-            case 'nombre_institucion':
-                $config['nombre_institucion'] = $cfg['valor'];
-                break;
-            case 'email_principal':
-                $config['email_principal'] = $cfg['valor'];
-                break;
-            case 'telefono_principal':
-                $config['telefono_principal'] = $cfg['valor'];
-                break;
-        }
+if ($configResult && $configResult->num_rows > 0) {
+    while ($row = $configResult->fetch_assoc()) {
+        $config[$row['clave']] = $row['valor'];
     }
+}
+
+// Construir ruta completa de la imagen
+$rutaImagen = '../' . $config['imagen']; 
+
+// Convertir imagen a base64 para DomPDF
+$imagenBase64 = '';
+if (file_exists($rutaImagen)) {
+    $imageData = file_get_contents($rutaImagen);
+    $imagenBase64 = 'data:image/' . pathinfo($rutaImagen, PATHINFO_EXTENSION) . ';base64,' . base64_encode($imageData);
+} else {
+    // Si no existe, usar placeholder
+    $imagenBase64 = 'data:image/svg+xml;base64,' . base64_encode('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="#007bff"/><text x="50%" y="50%" fill="white" text-anchor="middle" dy=".3em" font-size="20">LOGO</text></svg>');
 }
 
 // Obtener rol del usuario desde sesión
 session_start();
-$rolUsuario = isset($_SESSION['rol_id']) ? $_SESSION['rol_id'] : "Desconocido";
+$rolUsuario = isset($_SESSION['usuario_id']) ? $_SESSION['usuario_id'] : "Desconocido";
 $roles = [1 => "Administrador", 2 => "Coordinador Marketing", 3 => "Tutor", 4 => "Finanzas"];
 $nombreRol = isset($roles[$rolUsuario]) ? $roles[$rolUsuario] : "Usuario del Sistema";
 
@@ -212,9 +215,7 @@ $html = '<style>
 $html .= '<table id="tabla-cabecera">
     <tr>
         <td class="logo-empresa" style="width: 30%;">
-            <div style="width: 80px; height: 80px; background-color: #007bff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: bold;">
-                CRM
-            </div>
+            <img src="' . $imagenBase64 . '" alt="Logo" style="max-width: 100px; max-height: 100px; object-fit: contain;">
         </td>
         <td style="width: 40%;">
             <h3>' . htmlspecialchars($config['nombre_institucion']) . '</h3>

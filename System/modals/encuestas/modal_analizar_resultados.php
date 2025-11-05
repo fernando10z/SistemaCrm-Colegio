@@ -1,390 +1,494 @@
-<!-- Modal para analizar resultados -->
-<div class="modal fade" id="modalAnalizarResultados" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+<!-- INCLUIR EN HEAD -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Modal Análisis de Resultados -->
+<div class="modal fade" id="modalAnalisisEncuesta" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Análisis de Resultados de Encuestas</h5>
+            <div class="modal-header" style="background: linear-gradient(135deg, #E8EAF6 0%, #C5CAE9 100%); border-bottom: 2px solid #9FA8DA;">
+                <div>
+                    <h5 class="modal-title" style="color: #3F51B5; font-weight: 600;">
+                        <i class="ti ti-chart-line"></i> Análisis de Resultados
+                    </h5>
+                    <small class="text-muted" id="subtituloAnalisis"></small>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <label class="form-label">Seleccionar Encuesta</label>
-                        <select class="form-select" id="select-encuesta-analisis" onchange="cargarAnalisisEncuesta()">
-                            <option value="">Seleccionar encuesta para analizar</option>
-                            <?php
-                            // Obtener encuestas con respuestas
-                            $query_encuestas = "SELECT e.id, e.titulo, e.tipo, COUNT(re.id) as total_respuestas
-                                              FROM encuestas e 
-                                              LEFT JOIN respuestas_encuesta re ON e.id = re.encuesta_id
-                                              GROUP BY e.id, e.titulo, e.tipo
-                                              HAVING total_respuestas > 0
-                                              ORDER BY e.created_at DESC";
-                            $result_encuestas = $conn->query($query_encuestas);
-                            if ($result_encuestas && $result_encuestas->num_rows > 0) {
-                                while($encuesta = $result_encuestas->fetch_assoc()) {
-                                    echo "<option value='" . $encuesta['id'] . "'>" . 
-                                         htmlspecialchars($encuesta['titulo']) . " (" . $encuesta['total_respuestas'] . " respuestas)</option>";
-                                }
-                            }
-                            ?>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Filtrar por Fecha</label>
-                        <div class="row">
-                            <div class="col-6">
-                                <input type="date" class="form-control" id="fecha-desde" onchange="cargarAnalisisEncuesta()">
-                            </div>
-                            <div class="col-6">
-                                <input type="date" class="form-control" id="fecha-hasta" onchange="cargarAnalisisEncuesta()">
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="modal-body" style="background-color: #FAFAFA;">
                 
-                <div id="contenido-analisis" style="display: none;">
+                <!-- Loading -->
+                <div id="loadingAnalisis" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Procesando respuestas...</p>
+                </div>
+
+                <!-- Contenido Principal -->
+                <div id="contenidoAnalisis" style="display: none;">
+                    
                     <!-- Estadísticas Generales -->
                     <div class="row mb-4">
                         <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h3 class="text-primary mb-1" id="stat-total-respuestas">0</h3>
+                            <div class="card" style="border: 2px solid #C8E6C9; background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);">
+                                <div class="card-body text-center">
+                                    <i class="ti ti-users" style="font-size: 2.5rem; color: #4CAF50;"></i>
+                                    <h2 class="mt-2 mb-0" id="totalRespuestas" style="color: #2E7D32;">0</h2>
                                     <p class="text-muted mb-0">Total Respuestas</p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h3 class="text-success mb-1" id="stat-promedio-puntaje">0</h3>
-                                    <p class="text-muted mb-0">Puntaje Promedio</p>
+                            <div class="card" style="border: 2px solid #B39DDB; background: linear-gradient(135deg, #EDE7F6 0%, #D1C4E9 100%);">
+                                <div class="card-body text-center">
+                                    <i class="ti ti-calendar" style="font-size: 2.5rem; color: #673AB7;"></i>
+                                    <h2 class="mt-2 mb-0" id="periodoEncuesta" style="color: #512DA8;">-</h2>
+                                    <p class="text-muted mb-0">Periodo Activo</p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h3 class="text-info mb-1" id="stat-tasa-respuesta">0%</h3>
-                                    <p class="text-muted mb-0">Tasa de Respuesta</p>
+                            <div class="card" style="border: 2px solid #FFCCBC; background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);">
+                                <div class="card-body text-center">
+                                    <i class="ti ti-star" style="font-size: 2.5rem; color: #FF9800;"></i>
+                                    <h2 class="mt-2 mb-0" id="promedioGeneral" style="color: #E65100;">0.0</h2>
+                                    <p class="text-muted mb-0">Promedio General</p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h3 class="text-warning mb-1" id="stat-satisfaccion">0%</h3>
-                                    <p class="text-muted mb-0">Satisfacción General</p>
+                            <div class="card" style="border: 2px solid #B2DFDB; background: linear-gradient(135deg, #E0F2F1 0%, #B2DFDB 100%);">
+                                <div class="card-body text-center">
+                                    <i class="ti ti-list-check" style="font-size: 2.5rem; color: #009688;"></i>
+                                    <h2 class="mt-2 mb-0" id="totalPreguntas" style="color: #00695C;">0</h2>
+                                    <p class="text-muted mb-0">Preguntas</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Tabs para diferentes análisis -->
-                    <ul class="nav nav-tabs" id="tabs-analisis" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="tab-resumen" data-bs-toggle="tab" data-bs-target="#panel-resumen" type="button">
-                                Resumen Ejecutivo
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="tab-preguntas" data-bs-toggle="tab" data-bs-target="#panel-preguntas" type="button">
-                                Análisis por Pregunta
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="tab-tendencias" data-bs-toggle="tab" data-bs-target="#panel-tendencias" type="button">
-                                Tendencias
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="tab-comentarios" data-bs-toggle="tab" data-bs-target="#panel-comentarios" type="button">
-                                Comentarios
-                            </button>
-                        </li>
-                    </ul>
-                    
-                    <div class="tab-content mt-3" id="contenido-tabs-analisis">
-                        <!-- Panel Resumen Ejecutivo -->
-                        <div class="tab-pane fade show active" id="panel-resumen" role="tabpanel">
+
+                    <!-- Distribución por Tipo de Usuario -->
+                    <div class="card mb-4" style="border: 1px solid #E0E0E0; border-radius: 12px;">
+                        <div class="card-header" style="background: linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%); border-bottom: 2px solid #CE93D8;">
+                            <h6 class="mb-0" style="color: #7B1FA2;">
+                                <i class="ti ti-chart-pie"></i> Distribución de Respuestas
+                            </h6>
+                        </div>
+                        <div class="card-body">
                             <div class="row">
-                                <div class="col-md-8">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <h6 class="mb-0">Distribución de Respuestas</h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <canvas id="grafico-distribucion" width="400" height="200"></canvas>
-                                        </div>
-                                    </div>
+                                <div class="col-md-6">
+                                    <canvas id="chartDistribucion" height="200"></canvas>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <h6 class="mb-0">Indicadores Clave</h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div id="indicadores-clave">
-                                                <!-- Se llenará dinámicamente -->
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Panel Análisis por Pregunta -->
-                        <div class="tab-pane fade" id="panel-preguntas" role="tabpanel">
-                            <div id="analisis-preguntas">
-                                <!-- Se llenará dinámicamente -->
-                            </div>
-                        </div>
-                        
-                        <!-- Panel Tendencias -->
-                        <div class="tab-pane fade" id="panel-tendencias" role="tabpanel">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h6 class="mb-0">Evolución Temporal de Respuestas</h6>
-                                </div>
-                                <div class="card-body">
-                                    <canvas id="grafico-tendencias" width="400" height="200"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Panel Comentarios -->
-                        <div class="tab-pane fade" id="panel-comentarios" role="tabpanel">
-                            <div class="card">
-                                <div class="card-header">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0">Comentarios y Respuestas Abiertas</h6>
-                                        <select class="form-select form-select-sm" style="width: auto;" id="filtro-sentimiento">
-                                            <option value="">Todos los comentarios</option>
-                                            <option value="positivo">Comentarios Positivos</option>
-                                            <option value="neutral">Comentarios Neutrales</option>
-                                            <option value="negativo">Comentarios Negativos</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <div id="lista-comentarios" style="max-height: 400px; overflow-y: auto;">
-                                        <!-- Se llenará dinámicamente -->
+                                <div class="col-md-6">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tipo</th>
+                                                    <th class="text-center">Cantidad</th>
+                                                    <th class="text-center">%</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tablaDistribucion"></tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Análisis por Pregunta -->
+                    <div class="card" style="border: 1px solid #E0E0E0; border-radius: 12px;">
+                        <div class="card-header" style="background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); border-bottom: 2px solid #81C784;">
+                            <h6 class="mb-0" style="color: #388E3C;">
+                                <i class="ti ti-message-circle"></i> Análisis Detallado por Pregunta
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="contenedorPreguntas"></div>
+                        </div>
+                    </div>
+
                 </div>
-                
-                <div id="sin-seleccion" class="text-center py-5">
-                    <i class="ti ti-chart-line" style="font-size: 4rem; color: #ccc;"></i>
-                    <h5 class="text-muted mt-3">Selecciona una encuesta para ver el análisis</h5>
-                    <p class="text-muted">Los resultados y estadísticas aparecerán aquí</p>
+
+                <!-- Sin Respuestas -->
+                <div id="sinRespuestas" style="display: none;" class="text-center py-5">
+                    <i class="ti ti-inbox" style="font-size: 5rem; color: #BDBDBD;"></i>
+                    <h4 class="mt-3 text-muted">Sin respuestas aún</h4>
+                    <p class="text-muted">Esta encuesta aún no ha recibido respuestas</p>
                 </div>
+
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-outline-success" onclick="exportarAnalisis()" id="btn-exportar" style="display: none;">
-                    <i class="ti ti-download"></i> Exportar Reporte
+            <div class="modal-footer" style="background-color: #F5F5F5; border-top: 2px solid #E0E0E0;">
+                <button type="button" class="btn" onclick="exportarResultados()" 
+                        style="background: linear-gradient(135deg, #90CAF9 0%, #64B5F6 100%); color: white; border: none; border-radius: 8px;">
+                    <i class="ti ti-download"></i> Exportar Resultados
                 </button>
-                <button type="button" class="btn btn-primary" onclick="imprimirAnalisis()" id="btn-imprimir" style="display: none;">
-                    <i class="ti ti-printer"></i> Imprimir
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px;">
+                    Cerrar
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-let datosAnalisisActual = null;
+<style>
+.pregunta-analisis {
+    border: 2px solid #E0E0E0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background-color: white;
+    transition: all 0.3s ease;
+}
 
-function cargarAnalisisEncuesta() {
-    const encuestaId = document.getElementById('select-encuesta-analisis').value;
-    const fechaDesde = document.getElementById('fecha-desde').value;
-    const fechaHasta = document.getElementById('fecha-hasta').value;
+.pregunta-analisis:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: #B39DDB;
+}
+
+.respuesta-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 8px;
+    background-color: #FAFAFA;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.respuesta-item:hover {
+    background-color: #F0F0F0;
+}
+
+.barra-progreso {
+    height: 25px;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #E0E0E0;
+}
+
+.barra-fill {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 500;
+    font-size: 0.85rem;
+    transition: width 0.6s ease;
+}
+</style>
+
+<script>
+let chartInstances = {};
+let currentEncuestaId = null;
+
+// Función principal para abrir análisis
+function abrirAnalisisEncuesta(encuestaId) {
+    currentEncuestaId = encuestaId;
     
-    if (!encuestaId) {
-        document.getElementById('contenido-analisis').style.display = 'none';
-        document.getElementById('sin-seleccion').style.display = 'block';
-        document.getElementById('btn-exportar').style.display = 'none';
-        document.getElementById('btn-imprimir').style.display = 'none';
-        return;
-    }
+    // Resetear modal
+    document.getElementById('loadingAnalisis').style.display = 'block';
+    document.getElementById('contenidoAnalisis').style.display = 'none';
+    document.getElementById('sinRespuestas').style.display = 'none';
     
-    const formData = new FormData();
-    formData.append('accion', 'obtener_analisis_encuesta');
-    formData.append('encuesta_id', encuestaId);
-    if (fechaDesde) formData.append('fecha_desde', fechaDesde);
-    if (fechaHasta) formData.append('fecha_hasta', fechaHasta);
+    // Destruir gráficos anteriores
+    Object.values(chartInstances).forEach(chart => chart.destroy());
+    chartInstances = {};
     
-    fetch('acciones/encuestas/procesar_encuestas.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            datosAnalisisActual = data.datos;
-            mostrarAnalisis(data.datos);
-            document.getElementById('contenido-analisis').style.display = 'block';
-            document.getElementById('sin-seleccion').style.display = 'none';
-            document.getElementById('btn-exportar').style.display = 'inline-block';
-            document.getElementById('btn-imprimir').style.display = 'inline-block';
-        } else {
-            alert('Error al cargar el análisis: ' + data.mensaje);
+    // Abrir modal
+    const modal = new bootstrap.Modal(document.getElementById('modalAnalisisEncuesta'));
+    modal.show();
+    
+    // Cargar datos
+    cargarAnalisis(encuestaId);
+}
+
+// Cargar datos del análisis
+async function cargarAnalisis(encuestaId) {
+    try {
+        const response = await fetch(`acciones/encuestas/analizar_encuesta.php?id=${encuestaId}`);
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.message || 'Error al cargar análisis');
         }
-    })
-    .catch(error => {
+        
+        if (data.data.total_respuestas === 0) {
+            document.getElementById('loadingAnalisis').style.display = 'none';
+            document.getElementById('sinRespuestas').style.display = 'block';
+            return;
+        }
+        
+        // Renderizar análisis
+        renderizarAnalisis(data.data);
+        
+        document.getElementById('loadingAnalisis').style.display = 'none';
+        document.getElementById('contenidoAnalisis').style.display = 'block';
+        
+    } catch (error) {
         console.error('Error:', error);
-        alert('Error de conexión al cargar el análisis');
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo cargar el análisis: ' + error.message,
+            confirmButtonColor: '#EF5350'
+        });
+        bootstrap.Modal.getInstance(document.getElementById('modalAnalisisEncuesta')).hide();
+    }
+}
+
+// Renderizar todo el análisis
+function renderizarAnalisis(data) {
+    // Título
+    document.getElementById('subtituloAnalisis').textContent = data.encuesta.titulo;
+    
+    // Estadísticas generales
+    document.getElementById('totalRespuestas').textContent = data.total_respuestas;
+    document.getElementById('periodoEncuesta').textContent = 
+        `${formatearFecha(data.encuesta.fecha_inicio)} - ${data.encuesta.fecha_fin ? formatearFecha(data.encuesta.fecha_fin) : 'Activa'}`;
+    document.getElementById('promedioGeneral').textContent = data.promedio_general.toFixed(1);
+    document.getElementById('totalPreguntas').textContent = data.preguntas_analisis.length;
+    
+    // Gráfico de distribución
+    renderizarDistribucion(data.distribucion_usuarios);
+    
+    // Tabla de distribución
+    renderizarTablaDistribucion(data.distribucion_usuarios, data.total_respuestas);
+    
+    // Análisis por pregunta
+    renderizarPreguntas(data.preguntas_analisis);
+}
+
+// Gráfico de distribución
+function renderizarDistribucion(distribucion) {
+    const ctx = document.getElementById('chartDistribucion').getContext('2d');
+    
+    const colores = {
+        'Padres': '#81C784',
+        'Estudiantes': '#64B5F6',
+        'Ex-alumnos': '#FFB74D',
+        'Leads': '#E57373'
+    };
+    
+    const labels = Object.keys(distribucion);
+    const valores = Object.values(distribucion);
+    const backgroundColors = labels.map(label => colores[label] || '#BDBDBD');
+    
+    chartInstances['distribucion'] = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: valores,
+                backgroundColor: backgroundColors,
+                borderWidth: 2,
+                borderColor: '#FFFFFF'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: { size: 12 }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const porcentaje = ((context.parsed / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.parsed} (${porcentaje}%)`;
+                        }
+                    }
+                }
+            }
+        }
     });
 }
 
-function mostrarAnalisis(datos) {
-    // Actualizar estadísticas generales
-    document.getElementById('stat-total-respuestas').textContent = datos.estadisticas.total_respuestas || 0;
-    document.getElementById('stat-promedio-puntaje').textContent = (datos.estadisticas.promedio_puntaje || 0).toFixed(1);
-    document.getElementById('stat-tasa-respuesta').textContent = (datos.estadisticas.tasa_respuesta || 0) + '%';
-    document.getElementById('stat-satisfaccion').textContent = (datos.estadisticas.satisfaccion_general || 0) + '%';
+// Tabla de distribución
+function renderizarTablaDistribucion(distribucion, total) {
+    const tbody = document.getElementById('tablaDistribucion');
+    tbody.innerHTML = '';
     
-    // Crear indicadores clave
-    const indicadores = document.getElementById('indicadores-clave');
-    indicadores.innerHTML = `
-        <div class="mb-3">
-            <div class="d-flex justify-content-between">
-                <span>Respuestas Completas:</span>
-                <strong>${datos.estadisticas.respuestas_completas || 0}</strong>
-            </div>
-        </div>
-        <div class="mb-3">
-            <div class="d-flex justify-content-between">
-                <span>Tiempo Promedio:</span>
-                <strong>${datos.estadisticas.tiempo_promedio || 'N/A'}</strong>
-            </div>
-        </div>
-        <div class="mb-3">
-            <div class="d-flex justify-content-between">
-                <span>Última Respuesta:</span>
-                <strong>${datos.estadisticas.ultima_respuesta || 'N/A'}</strong>
-            </div>
-        </div>
-    `;
-    
-    // Mostrar análisis por preguntas
-    mostrarAnalisisPreguntas(datos.preguntas || []);
-    
-    // Mostrar comentarios
-    mostrarComentarios(datos.comentarios || []);
+    for (const [tipo, cantidad] of Object.entries(distribucion)) {
+        const porcentaje = ((cantidad / total) * 100).toFixed(1);
+        tbody.innerHTML += `
+            <tr>
+                <td>${tipo}</td>
+                <td class="text-center"><strong>${cantidad}</strong></td>
+                <td class="text-center">${porcentaje}%</td>
+            </tr>
+        `;
+    }
 }
 
-function mostrarAnalisisPreguntas(preguntas) {
-    const contenedor = document.getElementById('analisis-preguntas');
-    let html = '';
+// Renderizar análisis de preguntas
+function renderizarPreguntas(preguntas) {
+    const contenedor = document.getElementById('contenedorPreguntas');
+    contenedor.innerHTML = '';
     
     preguntas.forEach((pregunta, index) => {
-        html += `
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h6 class="mb-0">Pregunta ${index + 1}: ${pregunta.texto}</h6>
+        const html = crearHTMLPregunta(pregunta, index);
+        contenedor.innerHTML += html;
+    });
+    
+    // Crear gráficos
+    setTimeout(() => {
+        preguntas.forEach((pregunta, index) => {
+            if (['select', 'radio', 'checkbox', 'escala', 'rating', 'si_no'].includes(pregunta.tipo)) {
+                crearGraficoPregunta(pregunta, index);
+            }
+        });
+    }, 100);
+}
+
+// HTML de cada pregunta
+function crearHTMLPregunta(pregunta, index) {
+    let contenido = '';
+    
+    if (pregunta.tipo === 'text') {
+        // Texto libre - Mostrar respuestas
+        contenido = `
+            <div class="respuestas-texto" style="max-height: 300px; overflow-y: auto;">
+                ${pregunta.respuestas.slice(0, 10).map(r => `
+                    <div class="alert alert-light" style="border-left: 4px solid #9FA8DA; margin-bottom: 10px;">
+                        ${r}
+                    </div>
+                `).join('')}
+                ${pregunta.respuestas.length > 10 ? `
+                    <p class="text-muted text-center">Y ${pregunta.respuestas.length - 10} respuestas más...</p>
+                ` : ''}
+            </div>
+        `;
+    } else {
+        // Opciones múltiples - Gráfico y barras
+        contenido = `
+            <div class="row">
+                <div class="col-md-6">
+                    <canvas id="chartPregunta${index}" height="250"></canvas>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <canvas id="grafico-pregunta-${index}" width="400" height="200"></canvas>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="estadisticas-pregunta">
-                                <p><strong>Respuestas:</strong> ${pregunta.total_respuestas}</p>
-                                <p><strong>Tipo:</strong> ${pregunta.tipo}</p>
-                                ${pregunta.promedio ? `<p><strong>Promedio:</strong> ${pregunta.promedio}</p>` : ''}
+                <div class="col-md-6">
+                    ${Object.entries(pregunta.estadisticas).map(([opcion, datos]) => `
+                        <div class="respuesta-item">
+                            <div style="flex: 1;">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span style="font-weight: 500; color: #424242;">${opcion}</span>
+                                    <span style="color: #757575;">${datos.cantidad} (${datos.porcentaje.toFixed(1)}%)</span>
+                                </div>
+                                <div class="barra-progreso">
+                                    <div class="barra-fill" style="width: ${datos.porcentaje}%; background: ${obtenerColorBarra(datos.porcentaje)};">
+                                        ${datos.porcentaje >= 10 ? datos.porcentaje.toFixed(0) + '%' : ''}
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    `).join('')}
                 </div>
             </div>
         `;
-    });
-    
-    contenedor.innerHTML = html;
-}
-
-function mostrarComentarios(comentarios) {
-    const contenedor = document.getElementById('lista-comentarios');
-    let html = '';
-    
-    if (comentarios.length === 0) {
-        html = '<p class="text-muted text-center">No hay comentarios para mostrar</p>';
-    } else {
-        comentarios.forEach(comentario => {
-            const sentimientoClass = comentario.sentimiento === 'positivo' ? 'text-success' : 
-                                   comentario.sentimiento === 'negativo' ? 'text-danger' : 'text-muted';
-            
-            html += `
-                <div class="border-bottom pb-3 mb-3">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="flex-grow-1">
-                            <p class="mb-1">"${comentario.texto}"</p>
-                            <small class="text-muted">
-                                ${comentario.fecha} - ${comentario.respondente || 'Anónimo'}
-                            </small>
-                        </div>
-                        <span class="badge ${sentimientoClass === 'text-success' ? 'bg-success' : 
-                                            sentimientoClass === 'text-danger' ? 'bg-danger' : 'bg-secondary'}">
-                            ${comentario.sentimiento || 'Neutral'}
-                        </span>
-                    </div>
-                </div>
-            `;
-        });
     }
     
-    contenedor.innerHTML = html;
+    return `
+        <div class="pregunta-analisis">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <h6 style="color: #5C6BC0; flex: 1;">
+                    <span class="badge" style="background-color: #E8EAF6; color: #3F51B5;">P${index + 1}</span>
+                    ${pregunta.pregunta}
+                </h6>
+                <span class="badge" style="background: linear-gradient(135deg, #FFE082 0%, #FFD54F 100%); color: #F57F17;">
+                    ${pregunta.total_respuestas} respuestas
+                </span>
+            </div>
+            ${contenido}
+        </div>
+    `;
 }
 
-function exportarAnalisis() {
-    if (!datosAnalisisActual) {
-        alert('No hay datos para exportar');
-        return;
+// Crear gráfico de pregunta
+function crearGraficoPregunta(pregunta, index) {
+    const ctx = document.getElementById(`chartPregunta${index}`);
+    if (!ctx) return;
+    
+    const labels = Object.keys(pregunta.estadisticas);
+    const valores = Object.values(pregunta.estadisticas).map(e => e.cantidad);
+    const colores = generarColoresPastel(labels.length);
+    
+    chartInstances[`pregunta${index}`] = new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Respuestas',
+                data: valores,
+                backgroundColor: colores,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const porcentaje = ((context.parsed.y / total) * 100).toFixed(1);
+                            return `${context.parsed.y} respuestas (${porcentaje}%)`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+}
+
+// Funciones auxiliares
+function obtenerColorBarra(porcentaje) {
+    if (porcentaje >= 75) return 'linear-gradient(90deg, #66BB6A 0%, #81C784 100%)';
+    if (porcentaje >= 50) return 'linear-gradient(90deg, #42A5F5 0%, #64B5F6 100%)';
+    if (porcentaje >= 25) return 'linear-gradient(90deg, #FFA726 0%, #FFB74D 100%)';
+    return 'linear-gradient(90deg, #EF5350 0%, #E57373 100%)';
+}
+
+function generarColoresPastel(cantidad) {
+    const colores = [
+        '#81C784', '#64B5F6', '#FFB74D', '#E57373', '#BA68C8',
+        '#4DB6AC', '#FFD54F', '#FF8A65', '#9575CD', '#4DD0E1'
+    ];
+    return colores.slice(0, cantidad);
+}
+
+function formatearFecha(fecha) {
+    if (!fecha) return '-';
+    const [year, month, day] = fecha.split('-');
+    return `${day}/${month}/${year}`;
+}
+
+function exportarResultados() {
+    if (!currentEncuestaId) return;
+    window.open(`acciones/encuestas/exportar_resultados.php?id=${currentEncuestaId}`, '_blank');
+}
+
+// Event listener para botones de análisis
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.btn-analizar')) {
+        const btn = e.target.closest('.btn-analizar');
+        const encuestaId = btn.getAttribute('data-id');
+        abrirAnalisisEncuesta(encuestaId);
     }
-    
-    const formData = new FormData();
-    formData.append('accion', 'exportar_analisis');
-    formData.append('datos', JSON.stringify(datosAnalisisActual));
-    
-    fetch('acciones/encuestas/procesar_encuestas.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.blob())
-    .then(blob => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `analisis_encuesta_${new Date().getTime()}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al exportar el análisis');
-    });
-}
-
-function imprimirAnalisis() {
-    window.print();
-}
-
-// Filtro de comentarios por sentimiento
-document.getElementById('filtro-sentimiento').addEventListener('change', function() {
-    if (!datosAnalisisActual) return;
-    
-    const filtro = this.value;
-    const comentariosFiltrados = datosAnalisisActual.comentarios.filter(comentario => {
-        return !filtro || comentario.sentimiento === filtro;
-    });
-    
-    mostrarComentarios(comentariosFiltrados);
 });
 </script>

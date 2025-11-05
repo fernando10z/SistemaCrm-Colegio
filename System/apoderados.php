@@ -34,8 +34,8 @@ $sql = "SELECT
     a.updated_at,
     CONCAT(a.nombres, ' ', a.apellidos) as nombre_completo,
     -- Contar estudiantes asociados
-    COUNT(e.id) as total_estudiantes,
-    GROUP_CONCAT(CONCAT(e.nombres, ' ', e.apellidos) SEPARATOR ', ') as estudiantes_nombres,
+    COUNT(DISTINCT ae.estudiante_id) as total_estudiantes,
+    GROUP_CONCAT(DISTINCT CONCAT(e.nombres, ' ', e.apellidos) SEPARATOR ', ') as estudiantes_nombres,
     -- Calcular edad
     YEAR(CURDATE()) - YEAR(a.fecha_nacimiento) - 
     (DATE_FORMAT(CURDATE(), '%m%d') < DATE_FORMAT(a.fecha_nacimiento, '%m%d')) as edad,
@@ -47,7 +47,8 @@ $sql = "SELECT
     END as calificacion_participacion
 FROM apoderados a
 LEFT JOIN familias f ON a.familia_id = f.id
-LEFT JOIN estudiantes e ON a.familia_id = e.familia_id
+LEFT JOIN apoderado_estudiante ae ON a.id = ae.apoderado_id
+LEFT JOIN estudiantes e ON ae.estudiante_id = e.id AND e.activo = 1
 WHERE a.activo = 1
 GROUP BY a.id, a.familia_id, f.codigo_familia, f.apellido_principal, f.direccion, f.distrito, f.nivel_socioeconomico,
          a.tipo_apoderado, a.tipo_documento, a.numero_documento, a.nombres, a.apellidos, a.fecha_nacimiento,
@@ -147,6 +148,7 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
     <link rel="stylesheet" href="assets/fonts/fontawesome.css" />
     <!-- [Material Icons] https://fonts.google.com/icons -->
     <link rel="stylesheet" href="assets/fonts/material.css" />
+    
     <!-- [Template CSS Files] -->
     <link
       rel="stylesheet"
@@ -809,46 +811,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   alert('Error de conexión al obtener los datos del apoderado.');
                 }
               });
-            }
-
-            // Función para cargar estudiantes disponibles
-            function cargarEstudiantesDisponibles(apoderado_id) {
-              $.ajax({
-                url: 'actions/obtener_estudiantes_disponibles.php',
-                method: 'POST',
-                data: { apoderado_id: apoderado_id },
-                dataType: 'json',
-                success: function(response) {
-                  if (response.success) {
-                    mostrarEstudiantesDisponibles(response.data);
-                  } else {
-                    alert('Error al cargar estudiantes: ' + response.message);
-                  }
-                },
-                error: function() {
-                  alert('Error de conexión al obtener estudiantes disponibles.');
-                }
-              });
-            }
-
-            // Función para mostrar ficha completa
-            function mostrarFichaCompleta(data) {
-              // Cargar datos en modal de consulta de ficha
-              $('#modalConsultarFicha').modal('show');
-              // Implementar llenado de datos en el modal
-              console.log('Ficha completa:', data);
-            }
-
-            // Función para llenar formulario de edición
-            function llenarFormularioEdicion(data) {
-              // Implementar llenado de formulario
-              console.log('Datos para edición:', data);
-            }
-
-            // Función para mostrar estudiantes disponibles
-            function mostrarEstudiantesDisponibles(data) {
-              // Implementar lista de estudiantes
-              console.log('Estudiantes disponibles:', data);
             }
 
             // Validación de documentos en tiempo real

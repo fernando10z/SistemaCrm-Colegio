@@ -972,9 +972,9 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                     <li><a href="#nosotros" class="nav-link">Nosotros</a></li>
                     <li><a href="#cursos" class="nav-link">Cursos</a></li>
                     <li><a href="#contacto" class="nav-link">Contacto</a></li>
-                    <li><a href="System/login.php" class="btn-access">
+                    <!-- <li><a href="System/login.php" class="btn-access">
                         <i class="fas fa-user"></i> Acceder
-                    </a></li>
+                    </a></li> -->
                 </ul>
                 
                 <button class="mobile-menu-toggle" id="mobileMenu">

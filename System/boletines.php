@@ -588,12 +588,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                                                 title='Programar Envío Masivo'>
                                           <i class='ti ti-send'></i>
                                         </button>
-                                        <button type='button' class='btn btn-outline-warning btn-personalizar' 
-                                                data-id='" . $row['id'] . "'
-                                                data-nombre='" . htmlspecialchars($row['nombre']) . "'
-                                                title='Personalizar Contenido'>
-                                          <i class='ti ti-palette'></i>
-                                        </button>
                                       </div>
                                     </td>";
                               echo "</tr>";

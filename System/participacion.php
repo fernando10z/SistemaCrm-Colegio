@@ -303,6 +303,261 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
 } else {
   $nombre_sistema = "CRM Escolar";
 }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['accion'] === 'obtener_estadisticas_evento') {
+    header('Content-Type: application/json');
+    
+    $evento_id = $conn->real_escape_string($_POST['evento_id']);
+    
+    // Información del evento
+    $sql_evento = "SELECT 
+        e.id,
+        e.titulo,
+        e.descripcion,
+        e.fecha_inicio,
+        e.fecha_fin,
+        e.tipo,
+        e.dirigido_a,
+        e.capacidad_maxima,
+        e.ubicacion
+    FROM eventos e
+    WHERE e.id = '$evento_id'";
+    
+    $result_evento = $conn->query($sql_evento);
+    
+    if ($result_evento && $result_evento->num_rows > 0) {
+        $evento = $result_evento->fetch_assoc();
+        
+        // Métricas de participación
+        $sql_metricas = "SELECT 
+            COUNT(pe.id) as total_participantes,
+            COUNT(CASE WHEN pe.estado_participacion = 'asistio' THEN 1 END) as total_asistentes,
+            COUNT(CASE WHEN pe.estado_participacion = 'confirmado' THEN 1 END) as total_confirmados,
+            COUNT(CASE WHEN pe.estado_participacion = 'no_asistio' THEN 1 END) as total_ausentes,
+            COUNT(CASE WHEN pe.estado_participacion = 'invitado' THEN 1 END) as total_invitados,
+            COUNT(CASE WHEN pe.estado_participacion = 'cancelado' THEN 1 END) as total_cancelados,
+            ROUND((COUNT(CASE WHEN pe.estado_participacion = 'asistio' THEN 1 END) / 
+                   NULLIF(COUNT(pe.id), 0)) * 100, 2) as porcentaje_asistencia,
+            COUNT(DISTINCT pe.familia_id) as total_familias,
+            COUNT(DISTINCT pe.apoderado_id) as total_apoderados
+        FROM participantes_evento pe
+        WHERE pe.evento_id = '$evento_id'";
+        
+        $result_metricas = $conn->query($sql_metricas);
+        $metricas = $result_metricas->fetch_assoc();
+        
+        // Top 5 familias participantes en este evento
+        $sql_top_familias = "SELECT 
+            f.id,
+            f.apellido_principal,
+            f.codigo_familia,
+            COUNT(pe.id) as participantes,
+            GROUP_CONCAT(DISTINCT pe.estado_participacion) as estados
+        FROM familias f
+        JOIN participantes_evento pe ON f.id = pe.familia_id
+        WHERE pe.evento_id = '$evento_id'
+        GROUP BY f.id, f.apellido_principal, f.codigo_familia
+        ORDER BY participantes DESC
+        LIMIT 5";
+        
+        $result_top = $conn->query($sql_top_familias);
+        $top_familias = [];
+        while($fam = $result_top->fetch_assoc()) {
+            $top_familias[] = $fam;
+        }
+        
+        // Preparar respuesta
+        $response = [
+            'success' => true,
+            'data' => [
+                'evento' => $evento,
+                'metricas' => $metricas,
+                'top_familias' => $top_familias
+            ]
+        ];
+        
+        echo json_encode($response);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'No se encontró el evento especificado'
+        ]);
+    }
+    
+    $conn->close();
+    exit;
+}
+
+// Función para obtener historial de una familia
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['accion'] === 'obtener_historial_familia') {
+    header('Content-Type: application/json');
+    
+    $familia_id = $conn->real_escape_string($_POST['familia_id']);
+    
+    // Información de la familia
+    $sql_familia = "SELECT 
+        f.id,
+        f.apellido_principal,
+        f.apellido_secundario,
+        f.codigo_familia,
+        f.direccion,
+        f.telefono_principal,
+        f.email_principal,
+        f.observaciones
+    FROM familias f
+    WHERE f.id = '$familia_id'";
+    
+    $result_familia = $conn->query($sql_familia);
+    
+    if ($result_familia && $result_familia->num_rows > 0) {
+        $familia = $result_familia->fetch_assoc();
+        
+        // Estadísticas generales de la familia
+        $sql_estadisticas = "SELECT 
+            COUNT(DISTINCT pe.evento_id) as total_eventos,
+            COUNT(pe.id) as total_participaciones,
+            COUNT(CASE WHEN pe.estado_participacion = 'asistio' THEN 1 END) as total_asistencias,
+            COUNT(CASE WHEN pe.estado_participacion = 'no_asistio' THEN 1 END) as total_ausencias,
+            COUNT(CASE WHEN pe.estado_participacion = 'confirmado' THEN 1 END) as total_confirmados,
+            ROUND((COUNT(CASE WHEN pe.estado_participacion = 'asistio' THEN 1 END) / 
+                   NULLIF(COUNT(pe.id), 0)) * 100, 2) as tasa_asistencia,
+            -- Nivel de participación
+            CASE 
+                WHEN COUNT(pe.id) >= 10 THEN 'alta'
+                WHEN COUNT(pe.id) >= 5 THEN 'media'
+                ELSE 'baja'
+            END as nivel_participacion
+        FROM participantes_evento pe
+        JOIN eventos e ON pe.evento_id = e.id
+        WHERE pe.familia_id = '$familia_id'
+        AND e.fecha_inicio >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)";
+        
+        $result_stats = $conn->query($sql_estadisticas);
+        $estadisticas = $result_stats->fetch_assoc();
+        
+        // Miembros de la familia (apoderados y estudiantes)
+        $sql_miembros = "SELECT 
+            a.id,
+            a.nombres,
+            a.apellidos,
+            a.parentesco,
+            a.email,
+            a.telefono,
+            COUNT(pe.id) as participaciones
+        FROM apoderados a
+        LEFT JOIN participantes_evento pe ON a.id = pe.apoderado_id
+        WHERE a.familia_id = '$familia_id'
+        GROUP BY a.id, a.nombres, a.apellidos, a.parentesco, a.email, a.telefono
+        ORDER BY participaciones DESC";
+        
+        $result_miembros = $conn->query($sql_miembros);
+        $miembros = [];
+        while($miembro = $result_miembros->fetch_assoc()) {
+            $miembros[] = $miembro;
+        }
+        
+        // Estudiantes de la familia
+        $sql_estudiantes = "SELECT 
+            e.id,
+            e.nombres,
+            e.apellidos,
+            e.grado,
+            e.seccion
+        FROM estudiantes e
+        WHERE e.familia_id = '$familia_id'
+        ORDER BY e.grado, e.apellidos, e.nombres";
+        
+        $result_estudiantes = $conn->query($sql_estudiantes);
+        $estudiantes = [];
+        while($estudiante = $result_estudiantes->fetch_assoc()) {
+            $estudiantes[] = $estudiante;
+        }
+        
+        // Historial de eventos (timeline)
+        $sql_historial = "SELECT 
+            pe.id,
+            e.titulo as evento_titulo,
+            e.fecha_inicio,
+            e.tipo as evento_tipo,
+            pe.estado_participacion,
+            pe.fecha_confirmacion,
+            pe.fecha_asistencia,
+            pe.observaciones,
+            CONCAT(a.nombres, ' ', a.apellidos) as participante_nombre
+        FROM participantes_evento pe
+        JOIN eventos e ON pe.evento_id = e.id
+        LEFT JOIN apoderados a ON pe.apoderado_id = a.id
+        WHERE pe.familia_id = '$familia_id'
+        ORDER BY e.fecha_inicio DESC
+        LIMIT 50";
+        
+        $result_historial = $conn->query($sql_historial);
+        $historial = [];
+        while($evento = $result_historial->fetch_assoc()) {
+            $historial[] = $evento;
+        }
+        
+        // Datos para gráfica de tendencia (últimos 12 meses)
+        $sql_tendencia = "SELECT 
+            DATE_FORMAT(e.fecha_inicio, '%Y-%m') as mes,
+            COUNT(pe.id) as participaciones,
+            COUNT(CASE WHEN pe.estado_participacion = 'asistio' THEN 1 END) as asistencias
+        FROM participantes_evento pe
+        JOIN eventos e ON pe.evento_id = e.id
+        WHERE pe.familia_id = '$familia_id'
+        AND e.fecha_inicio >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+        GROUP BY DATE_FORMAT(e.fecha_inicio, '%Y-%m')
+        ORDER BY mes";
+        
+        $result_tendencia = $conn->query($sql_tendencia);
+        $tendencia = [];
+        while($mes = $result_tendencia->fetch_assoc()) {
+            $tendencia[] = $mes;
+        }
+        
+        // Resumen trimestral
+        $sql_trimestral = "SELECT 
+            QUARTER(e.fecha_inicio) as trimestre,
+            COUNT(pe.id) as participaciones,
+            COUNT(CASE WHEN pe.estado_participacion = 'asistio' THEN 1 END) as asistencias
+        FROM participantes_evento pe
+        JOIN eventos e ON pe.evento_id = e.id
+        WHERE pe.familia_id = '$familia_id'
+        AND YEAR(e.fecha_inicio) = YEAR(CURDATE())
+        GROUP BY QUARTER(e.fecha_inicio)
+        ORDER BY trimestre";
+        
+        $result_trimestral = $conn->query($sql_trimestral);
+        $trimestral = [];
+        while($trim = $result_trimestral->fetch_assoc()) {
+            $trimestral[] = $trim;
+        }
+        
+        // Preparar respuesta
+        $response = [
+            'success' => true,
+            'data' => [
+                'familia' => $familia,
+                'estadisticas' => $estadisticas,
+                'miembros' => $miembros,
+                'estudiantes' => $estudiantes,
+                'historial' => $historial,
+                'tendencia' => $tendencia,
+                'trimestral' => $trimestral
+            ]
+        ];
+        
+        echo json_encode($response);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'No se encontró la familia especificada'
+        ]);
+    }
+    
+    $conn->close();
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -759,11 +1014,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                                                 title='Ver Estadísticas del Evento'>
                                           <i class='ti ti-chart-pie'></i>
                                         </button>
-                                        <button type='button' class='btn btn-outline-success btn-ver-familia' 
-                                                data-familia-id='" . $row['familia_id'] . "'
-                                                title='Ver Historial Familia'>
-                                          <i class='ti ti-history'></i>
-                                        </button>
                                       </div>
                                     </td>";
                               echo "</tr>";
@@ -802,7 +1052,8 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
     <?php include 'modals/estadisticas/modal_medir_participacion.php'; ?>
     <?php include 'modals/estadisticas/modal_calcular_indice.php'; ?>
     <?php include 'modals/estadisticas/modal_generar_ranking.php'; ?>
-    <?php include 'modals/estadisticas/modal_exportar_datos.php'; ?>
+    <?php include 'modals/estadisticas/modal_ver_estadisticas_evento.php'; ?>
+    <?php include 'modals/estadisticas/modal_ver_historial_familia.php'; ?>
 
     <?php include 'includes/footer.php'; ?>
     
@@ -886,18 +1137,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                   }
                 });
               }
-            });
-
-            // Manejar click en botón ver estadísticas del evento
-            $(document).on('click', '.btn-ver-evento', function() {
-                var eventoId = $(this).data('evento-id');
-                mostrarEstadisticasEvento(eventoId);
-            });
-
-            // Manejar click en botón ver historial de familia
-            $(document).on('click', '.btn-ver-familia', function() {
-                var familiaId = $(this).data('familia-id');
-                mostrarHistorialFamilia(familiaId);
             });
 
             // Función para mostrar estadísticas del evento
@@ -1021,6 +1260,179 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
               });
             }
       });
+    </script>
+
+    <script>
+      $(document).on('click', '.btn-ver-evento', function() {
+          var eventoId = $(this).data('evento-id');
+          mostrarEstadisticasEvento(eventoId);
+      });
+
+      // Función para mostrar estadísticas del evento
+      function mostrarEstadisticasEvento(eventoId) {
+          // Mostrar modal
+          var modal = new bootstrap.Modal(document.getElementById('modalEstadisticasEvento'));
+          modal.show();
+          
+          // Mostrar loading
+          $('#loadingEstadisticas').show();
+          $('#datosEstadisticas').hide();
+          
+          // Obtener datos por AJAX
+          $.ajax({
+              url: '<?php echo $_SERVER['PHP_SELF']; ?>',
+              method: 'POST',
+              data: { 
+                  accion: 'obtener_estadisticas_evento',
+                  evento_id: eventoId 
+              },
+              dataType: 'json',
+              success: function(response) {
+                  if (response.success) {
+                      poblarModalEstadisticas(response.data);
+                  } else {
+                      Swal.fire({
+                          icon: 'error',
+                          title: 'Error',
+                          text: response.message || 'Error al cargar las estadísticas',
+                          confirmButtonColor: '#667eea'
+                      });
+                      modal.hide();
+                  }
+              },
+              error: function() {
+                  Swal.fire({
+                      icon: 'error',
+                      title: 'Error de Conexión',
+                      text: 'No se pudo conectar con el servidor',
+                      confirmButtonColor: '#667eea'
+                  });
+                  modal.hide();
+              }
+          });
+      }
+
+      // Función para poblar el modal con datos
+      function poblarModalEstadisticas(data) {
+          // Ocultar loading
+          $('#loadingEstadisticas').hide();
+          $('#datosEstadisticas').show();
+          
+          // Información del evento
+          $('#evento-titulo').text(data.evento.titulo);
+          $('#evento-fecha').html('<i class="ti ti-calendar me-1"></i>' + formatearFecha(data.evento.fecha_inicio));
+          $('#evento-tipo').html('<i class="ti ti-category me-1"></i><span class="badge badge-tipo-evento tipo-' + data.evento.tipo + '">' + formatearTipo(data.evento.tipo) + '</span>');
+          $('#evento-dirigido').html('<i class="ti ti-users me-1"></i>' + (data.evento.dirigido_a || 'Todos'));
+          $('#evento-capacidad').text((data.metricas.total_participantes || 0) + ' / ' + (data.evento.capacidad_maxima || '∞'));
+          
+          // Métricas
+          $('#total-participantes').text(data.metricas.total_participantes || 0);
+          $('#total-asistentes').text(data.metricas.total_asistentes || 0);
+          $('#total-confirmados').text(data.metricas.total_confirmados || 0);
+          $('#total-ausentes').text(data.metricas.total_ausentes || 0);
+          
+          // Tasa de asistencia
+          var porcentaje = parseFloat(data.metricas.porcentaje_asistencia || 0);
+          $('#porcentaje-asistencia').text(porcentaje.toFixed(1) + '%');
+          $('#barra-asistencia').css('width', porcentaje + '%').attr('aria-valuenow', porcentaje);
+          
+          // Cambiar color de la barra según porcentaje
+          var barraClase = porcentaje >= 80 ? 'bg-success' : porcentaje >= 60 ? 'bg-info' : porcentaje >= 40 ? 'bg-warning' : 'bg-danger';
+          $('#barra-asistencia').removeClass('bg-success bg-info bg-warning bg-danger').addClass(barraClase);
+          
+          // Distribución por estado
+          var distribucionHTML = '';
+          var estados = [
+              { key: 'total_invitados', label: 'Invitados', color: '#6c757d', icon: 'ti-mail' },
+              { key: 'total_confirmados', label: 'Confirmados', color: '#17a2b8', icon: 'ti-check' },
+              { key: 'total_asistentes', label: 'Asistieron', color: '#28a745', icon: 'ti-user-check' },
+              { key: 'total_ausentes', label: 'No Asistieron', color: '#dc3545', icon: 'ti-user-x' },
+              { key: 'total_cancelados', label: 'Cancelados', color: '#fd7e14', icon: 'ti-ban' }
+          ];
+          
+          estados.forEach(function(estado) {
+              var valor = data.metricas[estado.key] || 0;
+              var porcentajeEstado = data.metricas.total_participantes > 0 
+                  ? ((valor / data.metricas.total_participantes) * 100).toFixed(1)
+                  : 0;
+              
+              distribucionHTML += `
+                  <div class="estado-item">
+                      <div>
+                          <i class="ti ${estado.icon} me-2" style="color: ${estado.color};"></i>
+                          <strong>${estado.label}</strong>
+                      </div>
+                      <div>
+                          <span class="badge" style="background-color: ${estado.color}; color: white;">
+                              ${valor} (${porcentajeEstado}%)
+                          </span>
+                      </div>
+                  </div>
+              `;
+          });
+          $('#distribucion-estados').html(distribucionHTML);
+          
+          // Totales por tipo
+          $('#total-familias').text(data.metricas.total_familias || 0);
+          $('#total-apoderados').text(data.metricas.total_apoderados || 0);
+          
+          // Top 5 familias
+          var topFamiliasHTML = '';
+          if (data.top_familias && data.top_familias.length > 0) {
+              data.top_familias.forEach(function(familia, index) {
+                  var posicionClass = index === 0 ? 'posicion-1' : index === 1 ? 'posicion-2' : index === 2 ? 'posicion-3' : 'posicion-default';
+                  topFamiliasHTML += `
+                      <tr class="familia-item">
+                          <td><span class="posicion-badge ${posicionClass}">${index + 1}</span></td>
+                          <td><strong>${familia.apellido_principal}</strong></td>
+                          <td><span class="badge bg-secondary">${familia.codigo_familia}</span></td>
+                          <td>${familia.participantes} participante(s)</td>
+                          <td>${formatearEstados(familia.estados)}</td>
+                      </tr>
+                  `;
+              });
+          } else {
+              topFamiliasHTML = '<tr><td colspan="5" class="text-center text-muted">No hay datos disponibles</td></tr>';
+          }
+          $('#tabla-top-familias tbody').html(topFamiliasHTML);
+      }
+
+      // Funciones auxiliares
+      function formatearFecha(fecha) {
+          if (!fecha) return 'N/A';
+          var partes = fecha.split('-');
+          return partes[2] + '/' + partes[1] + '/' + partes[0];
+      }
+
+      function formatearTipo(tipo) {
+          return tipo ? tipo.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'N/A';
+      }
+
+      function formatearEstados(estados) {
+          if (!estados) return '<span class="badge bg-secondary">N/A</span>';
+          var estadosArray = estados.split(',');
+          var badgesHTML = '';
+          estadosArray.forEach(function(estado) {
+              var colorClase = 'bg-secondary';
+              if (estado === 'asistio') colorClase = 'bg-success';
+              else if (estado === 'confirmado') colorClase = 'bg-info';
+              else if (estado === 'no_asistio') colorClase = 'bg-danger';
+              else if (estado === 'cancelado') colorClase = 'bg-warning';
+              
+              badgesHTML += `<span class="badge ${colorClase} me-1">${formatearTipo(estado)}</span>`;
+          });
+          return badgesHTML;
+      }
+
+      // Función para exportar estadísticas
+      function exportarEstadisticasEvento() {
+          Swal.fire({
+              icon: 'info',
+              title: 'Función en Desarrollo',
+              text: 'La exportación de estadísticas estará disponible próximamente',
+              confirmButtonColor: '#667eea'
+          });
+      }
     </script>
     <!-- [Page Specific JS] end -->
     <script src="assets/js/mensajes_sistema.js"></script>

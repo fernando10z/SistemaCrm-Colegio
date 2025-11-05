@@ -796,223 +796,256 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
     
     <script>
       $(document).ready(function() {
-            // Inicializar DataTable con filtros integrados
-            var table = $("#interacciones-table").DataTable({
-              "language": {
-                "decimal": "",
-                "emptyTable": "No hay interacciones disponibles en la tabla",
-                "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                "infoEmpty": "Mostrando 0 a 0 de 0 registros",
-                "infoFiltered": "(filtrado de _MAX_ registros totales)",
-                "infoPostFix": "",
-                "thousands": ",",
-                "lengthMenu": "Mostrar _MENU_ registros",
-                "loadingRecords": "Cargando...",
-                "processing": "Procesando...",
-                "search": "Buscar:",
-                "zeroRecords": "No se encontraron registros coincidentes",
-                "paginate": {
-                  "first": "Primero",
-                  "last": "Último",
-                  "next": "Siguiente",
-                  "previous": "Anterior"
-                },
-                "aria": {
-                  "sortAscending": ": activar para ordenar la columna ascendente",
-                  "sortDescending": ": activar para ordenar la columna descendente"
-                }
-              },
-              "pageLength": 25,
-              "order": [[ 0, "desc" ]], // Ordenar por ID descendente (más recientes primero)
-              "columnDefs": [
-                { "orderable": false, "targets": 10 } // Deshabilitar ordenación en columna de acciones
-              ],
-              "initComplete": function () {
-                // Configurar filtros después de que la tabla esté completamente inicializada
-                this.api().columns().every(function (index) {
-                  var column = this;
-                  
-                  // Solo aplicar filtros a las primeras 10 columnas (sin acciones)
-                  if (index < 10) {
+    // Inicializar DataTable con filtros integrados
+    var table = $("#interacciones-table").DataTable({
+        "language": {
+            "decimal": "",
+            "emptyTable": "No hay interacciones disponibles en la tabla",
+            "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+            "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+            "infoFiltered": "(filtrado de _MAX_ registros totales)",
+            "infoPostFix": "",
+            "thousands": ",",
+            "lengthMenu": "Mostrar _MENU_ registros",
+            "loadingRecords": "Cargando...",
+            "processing": "Procesando...",
+            "search": "Buscar:",
+            "zeroRecords": "No se encontraron registros coincidentes",
+            "paginate": {
+                "first": "Primero",
+                "last": "Último",
+                "next": "Siguiente",
+                "previous": "Anterior"
+            },
+            "aria": {
+                "sortAscending": ": activar para ordenar la columna ascendente",
+                "sortDescending": ": activar para ordenar la columna descendente"
+            }
+        },
+        "pageLength": 25,
+        "order": [[ 0, "desc" ]], // Ordenar por ID descendente
+        "columnDefs": [
+            { "orderable": false, "targets": 10 } // Deshabilitar ordenación en acciones
+        ],
+        "initComplete": function () {
+            this.api().columns().every(function (index) {
+                var column = this;
+                
+                if (index < 10) {
                     var title = $(column.header()).text();
                     var input = $('<input type="text" class="form-control form-control-sm" placeholder="Buscar ' + title + '" />')
-                      .appendTo($(column.footer()).empty())
-                      .on('keyup change clear', function () {
-                        if (column.search() !== this.value) {
-                          column
-                            .search(this.value)
-                            .draw();
-                        }
-                      });
-                  } else {
-                    // Agregar "ACCIONES" en negrita en la columna de acciones
+                        .appendTo($(column.footer()).empty())
+                        .on('keyup change clear', function () {
+                            if (column.search() !== this.value) {
+                                column.search(this.value).draw();
+                            }
+                        });
+                } else {
                     $(column.footer()).html('<strong>Acciones</strong>');
-                  }
-                });
-              }
-            });
-
-            // Función para consultar historial
-            window.consultarHistorial = function() {
-              $('#modalConsultarHistorial').modal('show');
-            };
-
-            // Manejar click en botón ver historial
-            $(document).on('click', '.btn-ver-historial', function() {
-                var apoderadoId = $(this).data('apoderado-id');
-                var familiaId = $(this).data('familia-id');
-                
-                if (apoderadoId) {
-                    cargarHistorialApoderado(apoderadoId);
-                } else if (familiaId) {
-                    cargarHistorialFamilia(familiaId);
                 }
             });
+        }
+    });
 
-            // Manejar click en botón completar
-            $(document).on('click', '.btn-completar', function() {
-                var id = $(this).data('id');
-                completarInteraccion(id);
-            });
+    // Función para consultar historial
+    window.consultarHistorial = function() {
+        $('#modalConsultarHistorial').modal('show');
+    };
 
-            // Manejar click en botón actualizar seguimiento
-            $(document).on('click', '.btn-actualizar-seguimiento', function() {
-                var id = $(this).data('id');
-                var prioridad = $(this).data('prioridad');
-                actualizarSeguimiento(id, prioridad);
-            });
+    // Manejar click en botón ver historial - FUNCIÓN ACTUALIZADA
+    $(document).on('click', '.btn-ver-historial', function() {
+        var apoderadoId = $(this).data('apoderado-id');
+        var familiaId = $(this).data('familia-id');
+        
+        if (apoderadoId && apoderadoId !== '') {
+            cargarHistorialApoderado(apoderadoId);
+        } else if (familiaId && familiaId !== '') {
+            cargarHistorialFamilia(familiaId);
+        } else {
+            alert('No se puede cargar el historial. Información de contacto no disponible.');
+        }
+    });
 
-            // Función para cargar historial de apoderado
-            function cargarHistorialApoderado(apoderadoId) {
-              $.ajax({
-                url: '<?php echo $_SERVER['PHP_SELF']; ?>',
-                method: 'POST',
-                data: { 
-                  accion: 'consultar_historial',
-                  apoderado_id: apoderadoId 
-                },
-                dataType: 'json',
-                success: function(response) {
-                  if (response.success) {
-                    mostrarHistorialCompleto(response.data, 'Apoderado');
-                  } else {
-                    alert('Error al cargar el historial: ' + response.message);
-                  }
-                },
-                error: function() {
-                  alert('Error de conexión al obtener el historial.');
-                }
-              });
-            }
+    // Manejar click en botón completar
+    $(document).on('click', '.btn-completar', function() {
+        var id = $(this).data('id');
+        completarInteraccion(id);
+    });
 
-            // Función para completar interacción
-            function completarInteraccion(id) {
-              // Mostrar modal de completar con formulario
-              $('#modalCompletarInteraccion').remove();
-              
-              var modalHTML = `
-                <div class="modal fade" id="modalCompletarInteraccion" tabindex="-1">
-                  <div class="modal-dialog">
+    // Manejar click en botón actualizar seguimiento
+    $(document).on('click', '.btn-actualizar-seguimiento', function() {
+        var id = $(this).data('id');
+        var prioridad = $(this).data('prioridad');
+        actualizarSeguimiento(id, prioridad);
+    });
+
+    // Función para completar interacción
+    function completarInteraccion(id) {
+        $('#modalCompletarInteraccion').remove();
+        
+        var modalHTML = `
+            <div class="modal fade" id="modalCompletarInteraccion" tabindex="-1">
+                <div class="modal-dialog">
                     <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title">Completar Interacción</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                      </div>
-                      <form method="POST" action="">
-                        <div class="modal-body">
-                          <input type="hidden" name="accion" value="completar_interaccion">
-                          <input type="hidden" name="interaccion_id" value="${id}">
-                          <div class="mb-3">
-                            <label class="form-label">Resultado</label>
-                            <select name="resultado" class="form-control" required>
-                              <option value="">Seleccionar resultado</option>
-                              <option value="exitoso">Exitoso</option>
-                              <option value="sin_respuesta">Sin respuesta</option>
-                              <option value="reagendar">Reagendar</option>
-                              <option value="no_interesado">No interesado</option>
-                              <option value="convertido">Convertido</option>
-                            </select>
-                          </div>
-                          <div class="mb-3">
-                            <label class="form-label">Duración (minutos)</label>
-                            <input type="number" name="duracion_minutos" class="form-control" min="1">
-                          </div>
-                          <div class="mb-3">
-                            <label class="form-label">Observaciones finales</label>
-                            <textarea name="observaciones_finales" class="form-control" rows="3" required></textarea>
-                          </div>
+                        <div class="modal-header" style="background-color: #d4edda;">
+                            <h5 class="modal-title">
+                                <i class="ti ti-check-circle me-2"></i>Completar Interacción
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                          <button type="submit" class="btn btn-success">Completar Interacción</button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                </div>
-              `;
-              
-              $('body').append(modalHTML);
-              $('#modalCompletarInteraccion').modal('show');
-            }
-
-            // Función para actualizar seguimiento
-            function actualizarSeguimiento(id, prioridad) {
-              // Mostrar modal de actualizar seguimiento
-              $('#modalActualizarSeguimiento').remove();
-              
-              var modalHTML = `
-                <div class="modal fade" id="modalActualizarSeguimiento" tabindex="-1">
-                  <div class="modal-dialog">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title">Actualizar Seguimiento <span class="badge prioridad-${prioridad}">${prioridad.toUpperCase()}</span></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                      </div>
-                      <form method="POST" action="">
-                        <div class="modal-body">
-                          <input type="hidden" name="accion" value="actualizar_seguimiento">
-                          <input type="hidden" name="interaccion_id" value="${id}">
-                          <div class="mb-3">
-                            <label class="form-label">Observaciones del seguimiento</label>
-                            <textarea name="observaciones" class="form-control" rows="3" required></textarea>
-                          </div>
-                          <div class="mb-3">
-                            <label class="form-label">Nueva fecha de seguimiento</label>
-                            <input type="date" name="fecha_proximo_seguimiento" class="form-control" min="<?php echo date('Y-m-d'); ?>">
-                          </div>
-                          <div class="mb-3">
-                            <div class="form-check">
-                              <input type="checkbox" name="requiere_seguimiento" id="requiere_seguimiento" class="form-check-input" checked>
-                              <label for="requiere_seguimiento" class="form-check-label">Requiere seguimiento adicional</label>
+                        <form method="POST" action="" id="formCompletarInteraccion">
+                            <div class="modal-body">
+                                <input type="hidden" name="accion" value="completar_interaccion">
+                                <input type="hidden" name="interaccion_id" value="${id}">
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Resultado <span class="text-danger">*</span></label>
+                                    <select name="resultado" class="form-select" required>
+                                        <option value="">Seleccionar resultado</option>
+                                        <option value="exitoso">✓ Exitoso</option>
+                                        <option value="sin_respuesta">⏳ Sin respuesta</option>
+                                        <option value="reagendar">📅 Reagendar</option>
+                                        <option value="no_interesado">✗ No interesado</option>
+                                        <option value="convertido">★ Convertido</option>
+                                    </select>
+                                    <div class="invalid-feedback">Por favor, seleccione un resultado.</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Duración (minutos)</label>
+                                    <input type="number" name="duracion_minutos" class="form-control" 
+                                           min="1" max="600" placeholder="Ej: 30">
+                                    <small class="text-muted">Opcional - Entre 1 y 600 minutos</small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Observaciones finales <span class="text-danger">*</span></label>
+                                    <textarea name="observaciones_finales" class="form-control" 
+                                              rows="3" maxlength="1000" required 
+                                              placeholder="Describa el resultado de la interacción..."></textarea>
+                                    <div class="invalid-feedback">Por favor, ingrese las observaciones finales.</div>
+                                </div>
                             </div>
-                          </div>
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                          <button type="submit" class="btn btn-warning">Actualizar Seguimiento</button>
-                        </div>
-                      </form>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="ti ti-x me-1"></i>Cancelar
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="ti ti-check me-1"></i>Completar Interacción
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                  </div>
                 </div>
-              `;
-              
-              $('body').append(modalHTML);
-              $('#modalActualizarSeguimiento').modal('show');
+            </div>
+        `;
+        
+        $('body').append(modalHTML);
+        $('#modalCompletarInteraccion').modal('show');
+        
+        // Validación del formulario
+        $('#formCompletarInteraccion').on('submit', function(e) {
+            if (!this.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
             }
+            $(this).addClass('was-validated');
+        });
+    }
 
-            // Auto-refresh cada 2 minutos para interacciones programadas
-            setInterval(function() {
-              var interaccionesProgramadas = $('.estado-programado').length;
-              if (interaccionesProgramadas > 0) {
-                location.reload();
-              }
-            }, 120000); // 2 minutos
+    // Función para actualizar seguimiento
+    function actualizarSeguimiento(id, prioridad) {
+        $('#modalActualizarSeguimiento').remove();
+        
+        var prioridadBadge = `<span class="badge prioridad-${prioridad}">${prioridad.toUpperCase()}</span>`;
+        
+        var modalHTML = `
+            <div class="modal fade" id="modalActualizarSeguimiento" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background-color: #fff3cd;">
+                            <h5 class="modal-title">
+                                <i class="ti ti-calendar-event me-2"></i>Actualizar Seguimiento ${prioridadBadge}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="POST" action="" id="formActualizarSeguimiento">
+                            <div class="modal-body">
+                                <input type="hidden" name="accion" value="actualizar_seguimiento">
+                                <input type="hidden" name="interaccion_id" value="${id}">
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Observaciones del seguimiento <span class="text-danger">*</span></label>
+                                    <textarea name="observaciones" class="form-control" rows="3" 
+                                              maxlength="1000" required
+                                              placeholder="Registre el avance o novedades del seguimiento..."></textarea>
+                                    <div class="invalid-feedback">Por favor, ingrese las observaciones.</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Nueva fecha de seguimiento</label>
+                                    <input type="date" name="fecha_proximo_seguimiento" class="form-control" 
+                                           min="<?php echo date('Y-m-d'); ?>">
+                                    <small class="text-muted">Opcional - Si no se especifica, se mantiene la fecha actual</small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input type="checkbox" name="requiere_seguimiento" 
+                                               id="requiere_seguimiento_edit" class="form-check-input" checked>
+                                        <label for="requiere_seguimiento_edit" class="form-check-label">
+                                            Requiere seguimiento adicional
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">Desmarque si el seguimiento está completo</small>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="ti ti-x me-1"></i>Cancelar
+                                </button>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="ti ti-calendar-check me-1"></i>Actualizar Seguimiento
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        $('body').append(modalHTML);
+        $('#modalActualizarSeguimiento').modal('show');
+        
+        // Validación del formulario
+        $('#formActualizarSeguimiento').on('submit', function(e) {
+            if (!this.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            $(this).addClass('was-validated');
+        });
+    }
 
-            // Tooltip para elementos
-            $('[title]').tooltip();
-      });
+    // Auto-refresh cada 2 minutos para interacciones programadas
+    setInterval(function() {
+        var interaccionesProgramadas = $('.estado-programado').length;
+        if (interaccionesProgramadas > 0) {
+            // Solo recargar si hay interacciones programadas para hoy
+            location.reload();
+        }
+    }, 120000); // 2 minutos
+
+    // Tooltip para elementos con título
+    $('[title]').each(function() {
+        $(this).tooltip();
+    });
+});
+
+// Función para exportar interacciones a PDF (placeholder)
+function exportarInteraccionesPDF() {
+    alert('Funcionalidad de exportación a PDF en desarrollo.\n\nEsta función permitirá generar un informe PDF con todas las interacciones filtradas.');
+}
     </script>
     <!-- [Page Specific JS] end -->
     <script src="assets/js/mensajes_sistema.js"></script>

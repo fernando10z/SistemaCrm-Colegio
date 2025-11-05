@@ -688,6 +688,12 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                                             title='" . ($row['activo'] ? 'Desactivar' : 'Activar') . "'>
                                           <i class='ti ti-" . ($row['activo'] ? 'circle-x' : 'circle-check') . "'></i>
                                         </button>
+                                        <button type='button' class='btn btn-outline-primary btn-obtener-link' 
+                                                data-id='" . $row['id'] . "'
+                                                data-titulo='" . htmlspecialchars($row['titulo']) . "'
+                                                title='Obtener Link de Encuesta'>
+                                            <i class='ti ti-link'></i>
+                                        </button>
                                       </div>
                                     </td>";
                               echo "</tr>";
@@ -705,11 +711,18 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
         </div>
       </div>
     </section>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
     
     <?php include 'modals/encuestas/modal_crear_encuesta.php'; ?>
     <?php include 'modals/encuestas/modal_enviar_encuesta.php'; ?>
     <?php include 'modals/encuestas/modal_analizar_resultados.php'; ?>
     <?php include 'modals/encuestas/modal_gestionar_respuestas.php'; ?>
+    <?php include 'modals/encuestas/modal_compartir_encuesta.php'; ?>
+
 
     <?php include 'includes/footer.php'; ?>
     
@@ -805,26 +818,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
             toggleEstadoEncuesta(id, estadoActual);
           }
         });
-
-        function cargarAnalisisEncuesta(id) {
-          $.ajax({
-          url: 'acciones/encuestas/procesar_encuestas.php',
-          method: 'POST',
-          data: { accion: 'obtener_analisis', encuesta_id: id },
-          dataType: 'json',
-          success: function(response) {
-            if (response.success) {
-              // Mostrar análisis de la encuesta
-              $('#modalAnalizarResultados .modal-body').html(response.data);
-            } else {
-              alert('Error al cargar análisis: ' + response.message);
-            }
-          },
-          error: function() {
-            alert('Error de conexión al obtener análisis.');
-          }
-          });
-        }
 
         function cargarGestionRespuestas(id) {
           $('#gestionar_respuestas_encuesta_id').val(id);

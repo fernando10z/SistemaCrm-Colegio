@@ -931,10 +931,10 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
     </section>
 
     <!-- Incluir Modales -->
+    <?php include 'modals/clasificacion/modal_generar_segmentacion.php'; ?>
     <?php include 'modals/clasificacion/modal_evaluar_compromiso.php'; ?>
     <?php include 'modals/clasificacion/modal_medir_participacion.php'; ?>
     <?php include 'modals/clasificacion/modal_actualizar_clasificacion.php'; ?>
-    <?php include 'modals/clasificacion/modal_generar_segmentacion.php'; ?>
 
     <?php include 'includes/footer.php'; ?>
     

@@ -239,8 +239,13 @@
                                 <div class="col-md-6">
                                     <label class="form-label">Puntaje de Interés (0-100)</label>
                                     <input type="number" class="form-control" name="puntaje_interes" 
-                                           min="0" max="100" value="50" maxlength="3" 
-                                           oninput="if(this.value.length > 3) this.value = this.value.slice(0,3)">
+                                        min="0" max="100" value="50" step="1"
+                                        oninput="
+                                            if(this.value > 100) this.value = 100;
+                                            if(this.value < 0) this.value = 0;
+                                            this.value = Math.floor(this.value);
+                                        ">
+                                    <div class="invalid-feedback">El puntaje debe estar entre 0 y 100</div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Próxima Acción (Fecha)</label>
@@ -317,7 +322,20 @@
                 return true;
             }
         }
-        
+
+        const puntajeInteres = parseInt($('input[name="puntaje_interes"]').val());
+        if (puntajeInteres < 0 || puntajeInteres > 100 || isNaN(puntajeInteres)) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Puntaje inválido',
+                text: 'El puntaje de interés debe estar entre 0 y 100',
+                confirmButtonColor: '#FA896B'
+            });
+            $('input[name="puntaje_interes"]').addClass('is-invalid').focus();
+            $('#adicional-tab').tab('show');
+            return false;
+        }
+                
         $('#formNuevoLead').on('submit', function(e) {
             e.preventDefault();
             

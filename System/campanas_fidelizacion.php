@@ -172,21 +172,29 @@ function procesarActualizarParticipacion($conn, $data) {
         $nuevo_estado = $conn->real_escape_string($data['nuevo_estado']);
         $observaciones = $conn->real_escape_string($data['observaciones']);
         
-        $fecha_campo = '';
-        switch ($nuevo_estado) {
-            case 'confirmado':
-                $fecha_campo = 'fecha_confirmacion = CURRENT_TIMESTAMP,';
-                break;
-            case 'asistio':
-                $fecha_campo = 'fecha_asistencia = CURRENT_TIMESTAMP,';
-                break;
+        // Si el estado es "mantener", solo actualizar observaciones
+        if ($nuevo_estado === 'mantener') {
+            $sql = "UPDATE participantes_evento SET 
+                    observaciones = CONCAT(IFNULL(observaciones, ''), '\n[" . date('Y-m-d H:i:s') . "] ', '$observaciones')
+                    WHERE id = $participante_id";
+        } else {
+            // Actualizar estado y agregar timestamp correspondiente
+            $fecha_campo = '';
+            switch ($nuevo_estado) {
+                case 'confirmado':
+                    $fecha_campo = 'fecha_confirmacion = CURRENT_TIMESTAMP,';
+                    break;
+                case 'asistio':
+                    $fecha_campo = 'fecha_asistencia = CURRENT_TIMESTAMP,';
+                    break;
+            }
+            
+            $sql = "UPDATE participantes_evento SET 
+                    estado_participacion = '$nuevo_estado',
+                    $fecha_campo
+                    observaciones = CONCAT(IFNULL(observaciones, ''), '\n[" . date('Y-m-d H:i:s') . "] Estado: $nuevo_estado. ', '$observaciones')
+                    WHERE id = $participante_id";
         }
-        
-        $sql = "UPDATE participantes_evento SET 
-                estado_participacion = '$nuevo_estado',
-                $fecha_campo
-                observaciones = '$observaciones'
-                WHERE id = $participante_id";
         
         if ($conn->query($sql)) {
             return "Participación actualizada correctamente.";
@@ -858,12 +866,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                                                 title='Medir Impacto'>
                                           <i class='ti ti-chart-bar'></i>
                                         </button>" : "") . "
-                                        <button type='button' class='btn btn-outline-primary btn-gestionar-participacion' 
-                                                data-id='" . $row['id'] . "'
-                                                data-titulo='" . htmlspecialchars($row['titulo']) . "'
-                                                title='Gestionar Participación'>
-                                          <i class='ti ti-settings'></i>
-                                        </button>
                                       </div>
                                     </td>";
                               echo "</tr>";
@@ -903,6 +905,9 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
     <?php include 'modals/campanas_fidelizacion/modal_planificar_actividad.php'; ?>
     <?php include 'modals/campanas_fidelizacion/modal_organizar_evento.php'; ?>
     <?php include 'modals/campanas_fidelizacion/modal_medir_impacto.php'; ?>
+    <?php include 'modals/campanas_fidelizacion/modal_ver_participantes.php'; ?>
+
+
 
     <?php include 'includes/footer.php'; ?>
     
@@ -997,15 +1002,26 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
             $(document).on('click', '.btn-ver-participantes', function() {
                 var id = $(this).data('id');
                 var titulo = $(this).data('titulo');
-                verParticipantes(id, titulo);
+                cargarParticipantes(id, titulo);
             });
 
             // Manejar click en botón iniciar evento
             $(document).on('click', '.btn-iniciar-evento', function() {
-                var id = $(this).data('id');
-                if (confirm('¿Está seguro de que desea iniciar este evento?')) {
-                    iniciarEvento(id);
+              var id = $(this).data('id');
+              Swal.fire({
+                title: '¿Iniciar evento?',
+                text: "¿Está seguro de que desea iniciar este evento?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6', 
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, iniciar',
+                cancelButtonText: 'Cancelar'
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  iniciarEvento(id);
                 }
+              });
             });
 
             // Manejar click en botón medir impacto
@@ -1022,43 +1038,35 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                 gestionarParticipacion(id, titulo);
             });
 
-            // Función para ver participantes
-            function verParticipantes(eventoId, titulo) {
-              $.ajax({
-                url: 'actions/obtener_participantes_evento.php',
-                method: 'POST',
-                data: { evento_id: eventoId },
-                dataType: 'json',
-                success: function(response) {
-                  if (response.success) {
-                    mostrarParticipantes(response.data, titulo);
-                  } else {
-                    alert('Error al cargar participantes: ' + response.message);
-                  }
-                },
-                error: function() {
-                  alert('Error de conexión al obtener los participantes.');
-                }
-              });
-            }
-
             // Función para iniciar evento
             function iniciarEvento(eventoId) {
               $.ajax({
-                url: '<?php echo $_SERVER['PHP_SELF']; ?>',
-                method: 'POST',
-                data: { 
-                  accion: 'organizar_evento',
-                  evento_id: eventoId,
-                  participantes: '[]'
-                },
-                success: function(response) {
-                  alert('Evento iniciado correctamente.');
-                  location.reload();
-                },
-                error: function() {
-                  alert('Error al iniciar el evento.');
-                }
+              url: '<?php echo $_SERVER['PHP_SELF']; ?>',
+              method: 'POST',
+              data: { 
+                accion: 'organizar_evento',
+                evento_id: eventoId,
+                participantes: '[]'
+              },
+              success: function(response) {
+                Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!', 
+                text: 'Evento iniciado correctamente.',
+                showConfirmButton: true,
+                timer: 1500
+                }).then(() => {
+                location.reload();
+                });
+              },
+              error: function() {
+                Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error al iniciar el evento.',
+                showConfirmButton: true
+                });
+              }
               });
             }
 
@@ -1110,82 +1118,9 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
 
             // Función para gestionar participación
             function gestionarParticipacion(eventoId, titulo) {
-              $('#modalGestionarParticipacion').remove();
-              
-              var modalHTML = `
-                <div class="modal fade" id="modalGestionarParticipacion" tabindex="-1">
-                  <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title">Gestionar Participación: ${titulo}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                      </div>
-                      <div class="modal-body">
-                        <div id="participantes-container">
-                          <div class="d-flex justify-content-center">
-                            <div class="spinner-border" role="status">
-                              <span class="visually-hidden">Cargando...</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              `;
-              
-              $('body').append(modalHTML);
-              $('#modalGestionarParticipacion').modal('show');
-              
-              // Cargar participantes dinámicamente
-              verParticipantes(eventoId, titulo);
+              // Esta función ahora usa el modal completo de ver participantes
+              cargarParticipantes(eventoId, titulo);
             }
-
-            // Función para mostrar participantes
-            function mostrarParticipantes(data, titulo) {
-              var html = '<div class="table-responsive"><table class="table table-sm">';
-              html += '<thead><tr><th>Participante</th><th>Estado</th><th>Confirmación</th><th>Asistencia</th><th>Acciones</th></tr></thead><tbody>';
-              
-              data.forEach(function(participante) {
-                html += `<tr>
-                  <td>${participante.nombre}</td>
-                  <td><span class="badge badge-${participante.estado_class}">${participante.estado}</span></td>
-                  <td>${participante.fecha_confirmacion || '-'}</td>
-                  <td>${participante.fecha_asistencia || '-'}</td>
-                  <td>
-                    <button class="btn btn-outline-success btn-sm" onclick="actualizarParticipante(${participante.id}, 'confirmado')">Confirmar</button>
-                    <button class="btn btn-outline-primary btn-sm" onclick="actualizarParticipante(${participante.id}, 'asistio')">Marcar Asistencia</button>
-                  </td>
-                </tr>`;
-              });
-              
-              html += '</tbody></table></div>';
-              $('#participantes-container').html(html);
-            }
-
-            // Función global para actualizar participante
-            window.actualizarParticipante = function(participanteId, nuevoEstado) {
-              $.ajax({
-                url: '<?php echo $_SERVER['PHP_SELF']; ?>',
-                method: 'POST',
-                data: { 
-                  accion: 'actualizar_participacion',
-                  participante_id: participanteId,
-                  nuevo_estado: nuevoEstado,
-                  observaciones: 'Actualizado desde gestión de participación'
-                },
-                success: function(response) {
-                  alert('Participación actualizada correctamente.');
-                  location.reload();
-                },
-                error: function() {
-                  alert('Error al actualizar la participación.');
-                }
-              });
-            };
 
             // Auto-refresh cada 3 minutos para eventos activos
             setInterval(function() {

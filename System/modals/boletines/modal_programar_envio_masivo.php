@@ -14,12 +14,12 @@
                         <i class="ti ti-info-circle me-2"></i>
                         <strong>Boletín seleccionado:</strong> <span id="envio_boletin_nombre"></span>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Fecha de Envío <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control" name="fecha_envio" required 
+                                <input type="date" class="form-control" name="fecha_envio" required
                                        min="<?php echo date('Y-m-d'); ?>">
                             </div>
                         </div>
@@ -30,7 +30,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="mb-4">
                         <label class="form-label">Destinatarios <span class="text-danger">*</span></label>
                         <select class="form-select" name="destinatarios_tipo" id="destinatarios_tipo" required>
@@ -40,7 +40,7 @@
                             <option value="por_nivel">Filtrar por Nivel Educativo</option>
                         </select>
                     </div>
-                    
+
                     <div class="mb-3" id="filtro_nivel_container" style="display: none;">
                         <label class="form-label">Nivel Educativo <span class="text-danger">*</span></label>
                         <select class="form-select" name="nivel_educativo_filtro">
@@ -57,7 +57,7 @@
                             ?>
                         </select>
                     </div>
-                    
+
                     <div class="card bg-light">
                         <div class="card-header">
                             <h6 class="mb-0">Estimación de Destinatarios</h6>
@@ -88,14 +88,14 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="mt-3">
                         <label class="form-label">Mensaje Adicional (Opcional)</label>
-                        <textarea class="form-control" name="mensaje_adicional" rows="3" 
+                        <textarea class="form-control" name="mensaje_adicional" rows="3"
                                   placeholder="Mensaje personalizado que se agregará al inicio del boletín..."></textarea>
                         <small class="text-muted">Este mensaje aparecerá antes del contenido principal del boletín.</small>
                     </div>
-                    
+
                     <div class="mt-3">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="enviar_confirmacion" id="enviar_confirmacion" checked>
@@ -107,9 +107,9 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-outline-info" onclick="previsualizarEnvio()">
+                    <!-- <button type="button" class="btn btn-outline-info" onclick="previsualizarEnvio()">
                         <i class="ti ti-eye me-1"></i>Vista Previa
-                    </button>
+                    </button> -->
                     <button type="submit" class="btn btn-warning">
                         <i class="ti ti-send me-1"></i>Programar Envío
                     </button>
@@ -131,36 +131,36 @@ document.addEventListener('DOMContentLoaded', function() {
             filtroNivel.style.display = 'none';
             document.querySelector('select[name="nivel_educativo_filtro"]').required = false;
         }
-        
+
         // Limpiar estimaciones cuando cambia el tipo
         document.getElementById('total_destinatarios').textContent = '0';
         document.getElementById('emails_validos').textContent = '0';
         document.getElementById('costo_estimado').textContent = 'S/ 0.00';
     });
-    
+
     // Manejar envío del formulario
     document.getElementById('formProgramarEnvio').addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         const totalDestinatarios = parseInt(document.getElementById('total_destinatarios').textContent);
-        
+
         if (totalDestinatarios === 0) {
             alert('Por favor calcule los destinatarios antes de programar el envío.');
             return;
         }
-        
+
         if (!confirm(`¿Está seguro de programar el envío a ${totalDestinatarios} destinatarios?`)) {
             return;
         }
-        
+
         const formData = new FormData(this);
-        
+
         // Mostrar loader
         const submitBtn = this.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Programando...';
         submitBtn.disabled = true;
-        
+
         fetch('acciones/boletines/procesar_acciones.php', {
             method: 'POST',
             body: formData
@@ -188,28 +188,28 @@ document.addEventListener('DOMContentLoaded', function() {
 function calcularDestinatarios() {
     const tipoDestinatarios = document.getElementById('destinatarios_tipo').value;
     const nivelEducativo = document.querySelector('select[name="nivel_educativo_filtro"]').value;
-    
+
     if (!tipoDestinatarios) {
         alert('Por favor seleccione el tipo de destinatarios.');
         return;
     }
-    
+
     if (tipoDestinatarios === 'por_nivel' && !nivelEducativo) {
         alert('Por favor seleccione el nivel educativo.');
         return;
     }
-    
+
     // Mostrar estado de carga
     document.getElementById('total_destinatarios').innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
     document.getElementById('emails_validos').innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-    
+
     const formData = new FormData();
     formData.append('accion', 'calcular_destinatarios');
     formData.append('destinatarios_tipo', tipoDestinatarios);
     if (nivelEducativo) {
         formData.append('nivel_educativo_filtro', nivelEducativo);
     }
-    
+
     fetch('acciones/boletines/procesar_acciones.php', {
         method: 'POST',
         body: formData
@@ -219,7 +219,7 @@ function calcularDestinatarios() {
         if (data.success) {
             document.getElementById('total_destinatarios').textContent = data.total || 0;
             document.getElementById('emails_validos').textContent = data.emails_validos || 0;
-            
+
             // Calcular costo estimado (S/ 0.05 por email)
             const costo = (data.emails_validos || 0) * 0.05;
             document.getElementById('costo_estimado').textContent = 'S/ ' + costo.toFixed(2);
@@ -245,12 +245,12 @@ function previsualizarEnvio() {
     const horaEnvio = document.querySelector('input[name="hora_envio"]').value;
     const tipoDestinatarios = document.getElementById('destinatarios_tipo').value;
     const totalDestinatarios = document.getElementById('total_destinatarios').textContent;
-    
+
     if (!plantillaId || !fechaEnvio || !horaEnvio || !tipoDestinatarios) {
         alert('Por favor complete todos los campos requeridos.');
         return;
     }
-    
+
     // Crear modal de vista previa
     const modalPreview = document.createElement('div');
     modalPreview.innerHTML = `
@@ -293,12 +293,12 @@ function previsualizarEnvio() {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modalPreview);
-    
+
     const modal = new bootstrap.Modal(document.getElementById('modalVistaEnvio'));
     modal.show();
-    
+
     // Limpiar modal cuando se cierre
     document.getElementById('modalVistaEnvio').addEventListener('hidden.bs.modal', function () {
         modalPreview.remove();

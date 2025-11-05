@@ -13,7 +13,7 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
 $fecha_filtro = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
 $mes_filtro = isset($_GET['mes']) ? $_GET['mes'] : date('Y-m');
 $anio_filtro = isset($_GET['anio']) ? $_GET['anio'] : date('Y');
-$tipo_filtro = isset($_GET['tipo_filtro']) ? $_GET['tipo_filtro'] : 'dia'; // dia, mes, anio
+$tipo_filtro = isset($_GET['tipo_filtro']) ? $_GET['tipo_filtro'] : 'anio'; // dia, mes, anio
 
 $where_fecha = "";
 $where_fecha_leads = "";
