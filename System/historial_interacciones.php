@@ -1043,9 +1043,44 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
 });
 
 // Función para exportar interacciones a PDF (placeholder)
-function exportarInteraccionesPDF() {
-    alert('Funcionalidad de exportación a PDF en desarrollo.\n\nEsta función permitirá generar un informe PDF con todas las interacciones filtradas.');
-}
+window.exportarInteraccionesPDF = function() {
+    var tabla = $('#interacciones-table').DataTable();
+    var datosVisibles = [];
+    
+    // Obtener solo las filas visibles/filtradas
+    tabla.rows({ filter: 'applied' }).every(function(rowIdx, tableLoop, rowLoop) {
+        var data = this.data();
+        var row = [];
+        
+        // Extraer texto limpio de cada celda (sin HTML, excluyendo la última columna de acciones)
+        for (var i = 0; i < data.length - 1; i++) { // -1 para excluir columna de acciones
+            var cellContent = $(data[i]).text().trim() || data[i];
+            row.push(cellContent);
+        }
+        datosVisibles.push(row);
+    });
+    
+    if (datosVisibles.length === 0) {
+        alert('No hay registros visibles para generar el reporte PDF.');
+        return;
+    }
+    
+    // Crear formulario para enviar datos por POST
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'reports/generar_pdf_historial_interacciones.php';
+    form.target = '_blank';
+    
+    var input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'datosInteracciones';
+    input.value = JSON.stringify(datosVisibles);
+    
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+};
     </script>
     <!-- [Page Specific JS] end -->
     <script src="assets/js/mensajes_sistema.js"></script>

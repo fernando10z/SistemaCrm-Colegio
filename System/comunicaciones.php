@@ -814,7 +814,7 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
             }
 
             window.exportarLogsPDF = function() {
-              var tabla = $('#logs-table').DataTable();
+              var tabla = $('#historial-table').DataTable(); // ✅ ID correcto
               var datosVisibles = [];
               
               // Obtener solo las filas visibles/filtradas
@@ -822,9 +822,9 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                 var data = this.data();
                 var row = [];
                 
-                // Extraer texto limpio de cada celda (sin HTML)
-                for (var i = 0; i < data.length; i++) {
-                  var cellContent = $(data[i]).text() || data[i];
+                // Extraer texto limpio de cada celda (sin HTML, excluyendo la última columna de acciones)
+                for (var i = 0; i < data.length - 1; i++) { // -1 para excluir columna de acciones
+                  var cellContent = $(data[i]).text().trim() || data[i];
                   row.push(cellContent);
                 }
                 datosVisibles.push(row);
@@ -838,12 +838,12 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
               // Crear formulario para enviar datos por POST
               var form = document.createElement('form');
               form.method = 'POST';
-              form.action = 'reports/generar_pdf_apoderados.php';
+              form.action = 'reports/generar_pdf_historial_comunicaciones.php'; // ✅ Archivo correcto
               form.target = '_blank';
               
               var input = document.createElement('input');
               input.type = 'hidden';
-              input.name = 'filteredData';
+              input.name = 'datosHistorial';
               input.value = JSON.stringify(datosVisibles);
               
               form.appendChild(input);
@@ -851,7 +851,6 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
               form.submit();
               document.body.removeChild(form);
             };
-
 
             // Tooltip para elementos con title
             $('[title]').tooltip();

@@ -148,6 +148,86 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
     
     <!-- Custom styles for mensajes recurrentes -->
     <style>
+      /* Contenedor y alineación para badges (mejora visual en celdas pequeñas) */
+      .badge-categoria {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0.28rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: capitalize;
+        box-shadow: 0 1px 0 rgba(0,0,0,0.03), inset 0 -1px 0 rgba(255,255,255,0.06);
+        transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+        vertical-align: middle;
+      }
+
+      /* Pequeño icono circular delante del texto para mayor legibilidad */
+      .badge-categoria::before{
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        flex: 0 0 8px;
+        box-shadow: 0 0 0 2px rgba(255,255,255,0.06) inset;
+      }
+
+      /* Color de punto según categoría (sobreescribe si ya existen clases con background) */
+      .categoria-cumpleanos::before { background: #ff6fb1; }
+      .categoria-evento::before      { background: #7a5ce7; }
+      .categoria-recordatorio::before{ background: #ff922b; }
+      .categoria-general::before     { background: #6c757d; }
+      .categoria-bienvenida::before  { background: #28c097; }
+
+      /* Hover / foco para accesibilidad y feedback */
+      .badge-categoria:hover,
+      .badge-categoria:focus {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(50,50,93,0.08);
+        text-decoration: none;
+        opacity: 0.98;
+        cursor: default;
+      }
+
+      /* Contraste de texto para fondos claros/oscuros */
+      .categoria-cumpleanos,
+      .categoria-evento,
+      .categoria-recordatorio,
+      .categoria-bienvenida {
+        color: #fff;
+      }
+      .categoria-general {
+        color: #fff;
+      }
+
+      /* Estilos para vistas muy estrechas (móviles) */
+      @media (max-width: 576px) {
+        .badge-categoria {
+          font-size: 0.65rem;
+          padding: 0.2rem 0.45rem;
+          gap: 4px;
+        }
+        .plantilla-preview {
+          max-width: 120px;
+          font-size: 0.7rem;
+        }
+        .variables-info {
+          max-width: 90px;
+          font-size: 0.65rem;
+          padding: 0.12rem 0.22rem;
+        }
+      }
+
+      /* Alternativa visual para categorías inactivas o personalizadas */
+      .badge-categoria.inactiva {
+        background: linear-gradient(180deg, #f3f4f6, #e9ecef);
+        color: #495057;
+        border: 1px solid #e6e7ea;
+      }
+
+
       .badge-tipo {
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
@@ -491,8 +571,7 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
                                         <span class='plantilla-preview'>" . htmlspecialchars($row['contenido_preview']) . "...</span>
                                       </div>
                                     </td>";
-                              echo "<td><span class='badge badge-categoria $categoria_class'>" . 
-                                   ucfirst($categoria) . "</span></td>";
+                              echo "<td><span class='badge badge-categoria $categoria_class' style='color: black;'>" . ucfirst($categoria) . "</span></td>";
                               echo "<td><span class='variables-info' title='" . htmlspecialchars($variables_text) . "'>" . 
                                    htmlspecialchars($variables_text) . "</span></td>";
                               echo "<td>
@@ -862,28 +941,72 @@ if ($result_nombre && $row_nombre = $result_nombre->fetch_assoc()) {
           actualizarEstadisticas();
         }, 60000);
 
-        // Función para actualizar estadísticas
-        function actualizarEstadisticas() {
-          $.ajax({
-            url: 'actions/obtener_estadisticas_plantillas.php',
-            method: 'GET',
-            dataType: 'json',
-            success: function(response) {
-              if (response.success) {
-                // Actualizar los números en las tarjetas de estadísticas
-                $('.stats-card .stat-number').each(function(index) {
-                  var keys = ['total_plantillas', 'plantillas_activas', 'plantillas_cumpleanos', 'plantillas_eventos', 'cumpleanos_hoy', 'eventos_proximos'];
-                  if (keys[index] && response.data[keys[index]] !== undefined) {
-                    $(this).text(response.data[keys[index]]);
-                  }
+        // Función para exportar plantillas a PDF
+        window.exportarInteraccionesPDF = function() {
+            var tabla = $('#plantillas-table').DataTable();
+            var datosVisibles = [];
+            
+            tabla.rows({ filter: 'applied' }).every(function(rowIdx, tableLoop, rowLoop) {
+                var data = this.data();
+                var row = [];
+                
+                // Capturar solo las primeras 10 columnas (sin acciones)
+                for (var i = 0; i < data.length - 1; i++) {
+                    var cellContent = $(data[i]).text() || data[i];
+                    row.push(cellContent);
+                }
+                datosVisibles.push(row);
+            });
+            
+            if (datosVisibles.length === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Sin Datos',
+                    text: 'No hay registros visibles para generar el reporte PDF.',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#ffc107',
+                    background: '#fff9f0',
+                    iconColor: '#ff9800',
+                    customClass: {
+                        popup: 'swal-pastel',
+                        confirmButton: 'swal-btn-pastel'
+                    }
                 });
-              }
-            },
-            error: function() {
-              console.log('Error al actualizar estadísticas');
+                return;
             }
-          });
-        }
+            
+            // Mostrar loading
+            Swal.fire({
+                title: 'Generando PDF...',
+                text: 'Por favor espere',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                background: '#fef9ff',
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'reports/generar_pdf_plantillas.php';
+            form.target = '_blank';
+            
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'filteredData';
+            input.value = JSON.stringify(datosVisibles);
+            
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+            
+            // Cerrar loading después de un momento
+            setTimeout(function() {
+                Swal.close();
+            }, 1000);
+        };
 
         // Tooltip para elementos
         $('[title]').tooltip();

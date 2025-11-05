@@ -425,10 +425,10 @@
                   </small>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                  <!-- <button type="button" class="btn btn-outline-info btn-sm" onclick="generarReporteEgresados()">
-                    <i class="ti ti-chart-bar me-1"></i>
-                    Generar Reporte
-                  </button> -->
+                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="exportarEgresadosPDF()">
+  <i class="ti ti-file-type-pdf me-1"></i>
+  Generar PDF
+</button>
                   <!-- <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditarEgresado">
                     <i class="ti ti-edit me-1"></i>
                     Editar Información
@@ -809,6 +809,51 @@
               // Aquí iría la lógica para el modal de gestión de estado
               console.log('Gestionando estado del egresado:', id, nombre, estado);
             }
+
+            // Función para exportar egresados a PDF
+          window.exportarEgresadosPDF = function() {
+              var tabla = $('#egresados-table').DataTable();
+              var datosVisibles = [];
+              
+              // Obtener solo las filas visibles/filtradas
+              tabla.rows({ filter: 'applied' }).every(function(rowIdx, tableLoop, rowLoop) {
+                  var data = this.data();
+                  var row = [];
+                  
+                  // Extraer texto limpio de cada celda (sin HTML, excluyendo la última columna de acciones)
+                  for (var i = 0; i < data.length - 1; i++) { // -1 para excluir columna de acciones
+                      var cellContent = $(data[i]).text().trim() || data[i];
+                      row.push(cellContent);
+                  }
+                  datosVisibles.push(row);
+              });
+              
+              if (datosVisibles.length === 0) {
+                  Swal.fire({
+                      icon: 'warning',
+                      title: 'Sin datos',
+                      text: 'No hay registros visibles para generar el reporte PDF.',
+                      confirmButtonColor: '#667eea'
+                  });
+                  return;
+              }
+              
+              // Crear formulario para enviar datos por POST
+              var form = document.createElement('form');
+              form.method = 'POST';
+              form.action = 'reports/generar_pdf_registro_egresados.php';
+              form.target = '_blank';
+              
+              var input = document.createElement('input');
+              input.type = 'hidden';
+              input.name = 'datosEgresados';
+              input.value = JSON.stringify(datosVisibles);
+              
+              form.appendChild(input);
+              document.body.appendChild(form);
+              form.submit();
+              document.body.removeChild(form);
+          };
 
             // Tooltip para elementos
             $('[title]').tooltip();

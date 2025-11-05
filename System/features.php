@@ -247,10 +247,6 @@ $total_notificaciones = $total_pendientes + $total_consultas_pendientes;
                   </small>
                 </div>
                 <div class="d-flex gap-2">
-                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="exportarFeaturesPDF()">
-                    <i class="ti ti-file-type-pdf me-1"></i>
-                    Generar PDF
-                  </button>
                 </div>
               </div>
               
