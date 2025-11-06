@@ -99,6 +99,19 @@ include 'bd/conexion.php';
           --radius-xl: 24px;
       }
 
+    .swal2-container {
+        z-index: 9999999 !important;
+    }
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+    .invalid-feedback {
+        display: block;
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
       * {
           margin: 0;
           padding: 0;
@@ -571,6 +584,112 @@ include 'bd/conexion.php';
         </div>
     </div>
 
+    <!-- Modal: Solicitar Código -->
+    <div id="modalSolicitarCodigo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #a8e6cf, #dcedc1); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                    <i class="fas fa-key" style="font-size: 24px; color: #1f2937;"></i>
+                </div>
+                <h3 style="color: #1f2937; margin: 0; font-size: 1.5rem;">Recuperar Contraseña</h3>
+                <p style="color: #6b7280; font-size: 0.875rem; margin-top: 0.5rem;">Ingresa tu correo electrónico</p>
+            </div>
+            
+            <form id="formSolicitarCodigo">
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Correo Electrónico</label>
+                    <input type="email" id="emailRecuperacion" name="email" required 
+                        style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
+                        placeholder="tu@correo.com">
+                </div>
+                
+                <div style="display: flex; gap: 0.75rem;">
+                    <button type="button" onclick="cerrarModalSolicitar()" 
+                            style="flex: 1; padding: 0.75rem; background: #f3f4f6; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; color: #374151;">
+                        Cancelar
+                    </button>
+                    <button type="submit" 
+                            style="flex: 1; padding: 0.75rem; background: linear-gradient(135deg, #a8e6cf, #dcedc1); border: none; border-radius: 8px; font-weight: 600; cursor: pointer; color: #1f2937;">
+                        Enviar Código
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Verificar Código -->
+    <div id="modalVerificarCodigo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #d6eaff, #ffd6f0); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                    <i class="fas fa-envelope-open-text" style="font-size: 24px; color: #1f2937;"></i>
+                </div>
+                <h3 style="color: #1f2937; margin: 0; font-size: 1.5rem;">Verificar Código</h3>
+                <p style="color: #6b7280; font-size: 0.875rem; margin-top: 0.5rem;">Ingresa el código de 6 dígitos enviado a tu correo</p>
+            </div>
+            
+            <form id="formVerificarCodigo">
+                <input type="hidden" id="emailVerificacion" name="email">
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Código de Verificación</label>
+                    <input type="text" id="codigoVerificacion" name="codigo" required maxlength="6" pattern="\d{6}"
+                        style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1.5rem; text-align: center; letter-spacing: 0.5rem;"
+                        placeholder="000000">
+                    <small style="display: block; margin-top: 0.5rem; color: #6b7280; font-size: 0.75rem;">El código expira en 15 minutos</small>
+                </div>
+                
+                <div style="display: flex; gap: 0.75rem;">
+                    <button type="button" onclick="volverASolicitar()" 
+                            style="flex: 1; padding: 0.75rem; background: #f3f4f6; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; color: #374151;">
+                        Volver
+                    </button>
+                    <button type="submit" 
+                            style="flex: 1; padding: 0.75rem; background: linear-gradient(135deg, #d6eaff, #ffd6f0); border: none; border-radius: 8px; font-weight: 600; cursor: pointer; color: #1f2937;">
+                        Verificar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Cambiar Contraseña -->
+    <div id="modalCambiarPassword" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 450px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #ffd6f0, #a8e6cf); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                    <i class="fas fa-lock-open" style="font-size: 24px; color: #1f2937;"></i>
+                </div>
+                <h3 style="color: #1f2937; margin: 0; font-size: 1.5rem;">Nueva Contraseña</h3>
+                <p style="color: #6b7280; font-size: 0.875rem; margin-top: 0.5rem;">Crea una contraseña segura</p>
+            </div>
+            
+            <form id="formCambiarPassword">
+                <input type="hidden" id="tokenId" name="token_id">
+                <input type="hidden" id="usuarioId" name="usuario_id">
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Nueva Contraseña</label>
+                    <input type="password" id="nuevaPassword" name="nueva_password" required minlength="6"
+                        style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
+                        placeholder="Mínimo 6 caracteres">
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Confirmar Contraseña</label>
+                    <input type="password" id="confirmarPassword" name="confirmar_password" required minlength="6"
+                        style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
+                        placeholder="Repite tu contraseña">
+                </div>
+                
+                <button type="submit" 
+                        style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #ffd6f0, #a8e6cf); border: none; border-radius: 8px; font-weight: 600; cursor: pointer; color: #1f2937; font-size: 1rem;">
+                    Cambiar Contraseña
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // Enhanced form interactions
@@ -715,14 +834,256 @@ include 'bd/conexion.php';
                 });
             });
             
-            // Enhanced checkbox interaction
-            const checkbox = document.getElementById('remember');
-            checkbox.addEventListener('change', function() {
-                this.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    this.style.transform = 'scale(1)';
-                }, 150);
+        });
+
+        // Variables globales para recuperación
+        let emailRecuperacion = '';
+        let tokenIdRecuperacion = 0;
+        let usuarioIdRecuperacion = 0;
+
+        // Abrir modal de solicitud de código
+        document.querySelector('.forgot-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            const modal = document.getElementById('modalSolicitarCodigo');
+            modal.style.display = 'flex';
+            document.getElementById('emailRecuperacion').focus();
+        });
+
+        // Cerrar modal solicitar
+        function cerrarModalSolicitar() {
+            document.getElementById('modalSolicitarCodigo').style.display = 'none';
+            document.getElementById('formSolicitarCodigo').reset();
+        }
+
+        // Volver a solicitar código
+        function volverASolicitar() {
+            document.getElementById('modalVerificarCodigo').style.display = 'none';
+            document.getElementById('modalSolicitarCodigo').style.display = 'flex';
+            document.getElementById('formVerificarCodigo').reset();
+        }
+
+        // PASO 1: Enviar código
+        document.getElementById('formSolicitarCodigo').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('emailRecuperacion').value.trim();
+            
+            if (!email || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Email inválido',
+                    text: 'Por favor ingresa un correo electrónico válido',
+                    background: '#fff',
+                    confirmButtonColor: '#a8e6cf'
+                });
+                return;
+            }
+            
+            Swal.fire({
+                title: 'Enviando código...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
             });
+            
+            const formData = new FormData();
+            formData.append('email', email);
+            
+            fetch('recuperacion/enviar_codigo.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    emailRecuperacion = email;
+                    usuarioIdRecuperacion = data.usuario_id;
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Código Enviado!',
+                        text: data.message,
+                        background: '#fff',
+                        confirmButtonColor: '#a8e6cf'
+                    }).then(() => {
+                        cerrarModalSolicitar();
+                        document.getElementById('emailVerificacion').value = email;
+                        document.getElementById('modalVerificarCodigo').style.display = 'flex';
+                        document.getElementById('codigoVerificacion').focus();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message,
+                        background: '#fff',
+                        confirmButtonColor: '#fca5a5'
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error de conexión. Intenta nuevamente.',
+                    background: '#fff',
+                    confirmButtonColor: '#fca5a5'
+                });
+            });
+        });
+
+        // PASO 2: Verificar código
+        document.getElementById('formVerificarCodigo').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const codigo = document.getElementById('codigoVerificacion').value.trim();
+            
+            if (!codigo || !codigo.match(/^\d{6}$/)) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Código inválido',
+                    text: 'El código debe ser de 6 dígitos',
+                    background: '#fff',
+                    confirmButtonColor: '#d6eaff'
+                });
+                return;
+            }
+            
+            Swal.fire({
+                title: 'Verificando código...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+            
+            const formData = new FormData();
+            formData.append('email', emailRecuperacion);
+            formData.append('codigo', codigo);
+            
+            fetch('recuperacion/verificar_codigo.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    tokenIdRecuperacion = data.token_id;
+                    usuarioIdRecuperacion = data.usuario_id;
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Código Válido!',
+                        text: data.message,
+                        background: '#fff',
+                        confirmButtonColor: '#d6eaff',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        document.getElementById('modalVerificarCodigo').style.display = 'none';
+                        document.getElementById('tokenId').value = tokenIdRecuperacion;
+                        document.getElementById('usuarioId').value = usuarioIdRecuperacion;
+                        document.getElementById('modalCambiarPassword').style.display = 'flex';
+                        document.getElementById('nuevaPassword').focus();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message,
+                        background: '#fff',
+                        confirmButtonColor: '#fca5a5'
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error de conexión. Intenta nuevamente.',
+                    background: '#fff',
+                    confirmButtonColor: '#fca5a5'
+                });
+            });
+        });
+
+        // PASO 3: Cambiar contraseña
+        document.getElementById('formCambiarPassword').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const nueva = document.getElementById('nuevaPassword').value;
+            const confirmar = document.getElementById('confirmarPassword').value;
+            
+            if (nueva.length < 6) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Contraseña muy corta',
+                    text: 'La contraseña debe tener al menos 6 caracteres',
+                    background: '#fff',
+                    confirmButtonColor: '#ffd6f0'
+                });
+                return;
+            }
+            
+            if (nueva !== confirmar) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Contraseñas no coinciden',
+                    text: 'Las contraseñas ingresadas no son iguales',
+                    background: '#fff',
+                    confirmButtonColor: '#ffd6f0'
+                });
+                return;
+            }
+            
+            Swal.fire({
+                title: 'Cambiando contraseña...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+            
+            const formData = new FormData(this);
+            
+            fetch('recuperacion/cambiar_password.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Contraseña Actualizada!',
+                        text: 'Ya puedes iniciar sesión con tu nueva contraseña',
+                        background: '#fff',
+                        confirmButtonColor: '#a8e6cf'
+                    }).then(() => {
+                        document.getElementById('modalCambiarPassword').style.display = 'none';
+                        document.getElementById('formCambiarPassword').reset();
+                        document.getElementById('email').value = emailRecuperacion;
+                        document.getElementById('email').focus();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message,
+                        background: '#fff',
+                        confirmButtonColor: '#fca5a5'
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error de conexión. Intenta nuevamente.',
+                    background: '#fff',
+                    confirmButtonColor: '#fca5a5'
+                });
+            });
+        });
+
+        // Solo números en campo de código
+        document.getElementById('codigoVerificacion').addEventListener('input', function(e) {
+            this.value = this.value.replace(/\D/g, '').slice(0, 6);
         });
         
         // Add fadeIn animation keyframes
